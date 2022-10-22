@@ -29,6 +29,7 @@ add_compile_options(
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat/*.*
         )
 
 set(SOURCE_FILES
@@ -45,6 +46,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor
+        ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat
         )
 
 target_sources(${PROJECT_NAME}

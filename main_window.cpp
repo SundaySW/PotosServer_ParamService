@@ -4,7 +4,6 @@
 
 #include "main_window.h"
 #include "fixed_packet.h"
-#include "log_view.h"
 #include "packet_utils.h"
 #include <algorithm>
 #include <qapplication.h>
@@ -43,23 +42,13 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     statusBar()->addWidget(statusLabel);
     CentralWin->setLayout(mainLayout);
     setCentralWidget(CentralWin);
-    logView = new LogView(this);
-    mainLayout->addWidget(logView);
-    connect(fwLoader, SIGNAL(signalNextBlock(uint, uint, uint)), this, SLOT(updateStatus(uint, uint, uint)));
-    connect(fwLoader, SIGNAL(signalBootData(uint)), this, SLOT(transmitBlock(uint)));
-    connect(fwLoader, SIGNAL(signalAckReceived()), this, SLOT(ackInBootReceived()));
-    connect(fwLoader, SIGNAL(signalFinishedOK(uint, int)), this, SLOT(finishedOk(uint,int)));
-    connect(fwLoader, SIGNAL(signalError(const QString&, uint)), this, SLOT(getError(const QString&, uint)));
-    Socket.AddRxMsgHandler([this](const ProtosMessage& rxMsg) {	fwLoader->ParseBootMsg(rxMsg);});
     Socket.AddTxMsgHandler([this](const ProtosMessage& txMsg) { txMsgHandler(txMsg);});
 
     if (!Socket.Connect("127.0.0.5", 3699, 1000)){
         statusLabel->setText(tr("Cant connect to Server"));
-        logView->AddMsg(tr("Cant connect to Server"));
     }
     else{
         statusLabel->setText(tr("Connected to Server"));
-        logView->AddMsg(tr("Connected to Server"));
     }
 }
 
@@ -87,26 +76,6 @@ QToolBar* MainWindow::CreateToolbar()
     connect(loadDevice, &QAction::triggered, [this](bool checked)
     {
         openFile();
-    });
-
-    toolbar->addSeparator();
-    auto setDelay = toolbar->addAction(QIcon(), QString("Set Adapter Delay"));
-    setDelay->setObjectName("SetDelay");
-    setDelay->setCheckable(false);
-    setDelay->setToolTip(QStringLiteral("Изменить задержку отправки в коробку"));
-    connect(setDelay, &QAction::triggered, [this](bool checked)
-    {
-        setDelayDlg();
-    });
-
-    toolbar->addSeparator();
-    auto stopProcess = toolbar->addAction(QIcon(), QString("Stop Process"));
-    stopProcess->setObjectName("stopProcess");
-    stopProcess->setCheckable(false);
-    stopProcess->setToolTip(QStringLiteral("Остановить процесс"));
-    connect(stopProcess, &QAction::triggered, [this](bool checked)
-    {
-        stopProcessDlg();
     });
 
 //    toolbar->addSeparator();
@@ -168,10 +137,6 @@ void MainWindow::getError(const QString &error, uint uid) {
     layout->addWidget(btn_box);
 
     dlg.setLayout(layout);
-
-    if(dlg.exec() == QDialog::Accepted) {
-        fwLoader->cancelFWLoad(uid);
-    }
 }
 
 void MainWindow::openFile() {
@@ -199,13 +164,14 @@ void MainWindow::openFile() {
         QFile file(fileName);
         if (file.open(QIODevice::ReadWrite))
         {
-            fwLoader->addDevice(fileName, addr8, uid24,0x1);
             qDebug() << (tr("UID: %1 ADDR: %2 ").arg(uid24).arg(addr8));
             statusLabel->setText(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
-            logView->AddMsg(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
         }
     } else{
         statusLabel->setText(tr("Aborted adding device"));
-        logView->AddMsg(tr("Aborted adding device"));
     }
+}
+
+void MainWindow::txMsgHandler(const ProtosMessage &txMsg) {
+
 }

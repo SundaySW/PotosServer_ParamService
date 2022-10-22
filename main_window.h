@@ -17,18 +17,10 @@ public:
     MainWindow(int argv, char** argc, QWidget *parent = 0);
     //signals:
 private slots:
-    void transmitBlock(uint UID);
-    void updateStatus(uint delta, uint uid, uint addr);
-    void ackInBootReceived();
-    void finishedOk(uint, int);
     void getError(const QString& error, uint uid);
 private:
     QToolBar* CreateToolbar();
     void openFile();
-    void sendMessage();
-    void getMessage();
-    void setDelayDlg();
-    void stopProcessDlg();
     void UpdatePortButton(bool checked);
     LogView* logView;
     QLabel* statusLabel;
