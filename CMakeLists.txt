@@ -21,6 +21,8 @@ find_package(${qt_ver}Gui         REQUIRED)
 find_package(${qt_ver}Core        REQUIRED)
 find_package(${qt_ver}Network     REQUIRED)
 find_package(${qt_ver}SerialPort  REQUIRED)
+find_package(${qt_ver}Sql         REQUIRED)
+
 
 add_compile_options(
         -finput-charset=CP1251
@@ -29,12 +31,18 @@ add_compile_options(
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/TableModel/*.*
         ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/Settings/*.*
         )
 
 set(SOURCE_FILES
         main.cpp
         main_window.cpp
+        ParamService.cpp
+        Settings/Settings_dlg.cpp
         ${WIN32_RESOURCES}
         ${SOURCES}
         )
@@ -46,7 +54,11 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor
+        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver
+        ${CMAKE_CURRENT_SOURCE_DIR}/TableModel
         ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat
+        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item
+        ${CMAKE_CURRENT_SOURCE_DIR}/Settings/
         )
 
 target_sources(${PROJECT_NAME}
@@ -59,6 +71,7 @@ target_link_libraries(${PROJECT_NAME} ${qt_ver}::Gui)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Widgets)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Network)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::SerialPort)
+target_link_libraries(${PROJECT_NAME} ${qt_ver}::Sql)
 
 #add_custom_command(
 #        TARGET ${PROJECT_NAME} POST_BUILD

@@ -1,0 +1,4 @@
+QListWidget{
+    border-bottom: 1px solid lightgrey;
+    selection-color: green;
+}

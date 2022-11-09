@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="PotosServer_ParamService" targetName="PotosServer_ParamService" />
+      <config projectName="PotosServer_ParamService" targetName="PotosServer_ParamService_autogen" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0214efdf-1316-4fdf-a60d-df607963b2d3" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DB_Driver/PSQL_Driver.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/DB_Driver/PSQL_Driver.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CSS File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="ProjectId" id="2GZplreTYHpo15Rj1ZmZGjL2roG" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="cf.first.check.clang-format" value="false" />
+    <property name="list.type.of.created.stylesheet" value="CSS" />
+    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.github.ui.GithubSettingsConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService\qss" />
+      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService" />
+      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService\Settings" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake Application.PotosServer_ParamService">
+    <configuration name="PotosServer_ParamService" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="PotosServer_ParamService" TARGET_NAME="PotosServer_ParamService" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="PotosServer_ParamService" RUN_TARGET_NAME="PotosServer_ParamService">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PotosServer_ParamService_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="PotosServer_ParamService" TARGET_NAME="PotosServer_ParamService_autogen" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.PotosServer_ParamService" />
+      <item itemvalue="CMake Application.PotosServer_ParamService_autogen" />
+    </list>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0214efdf-1316-4fdf-a60d-df607963b2d3" name="Default Changelist" comment="" />
+      <created>1666606113151</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1666606113151</updated>
+      <workItem from="1666606114617" duration="1608000" />
+      <workItem from="1666618609730" duration="4445000" />
+      <workItem from="1666710694469" duration="20000" />
+      <workItem from="1666710719634" duration="8783000" />
+      <workItem from="1666777875070" duration="3846000" />
+      <workItem from="1666864044259" duration="13776000" />
+      <workItem from="1666950424776" duration="12660000" />
+      <workItem from="1667217440081" duration="7735000" />
+      <workItem from="1667297075072" duration="17021000" />
+      <workItem from="1667381611311" duration="12542000" />
+      <workItem from="1667398754779" duration="3205000" />
+      <workItem from="1667469205638" duration="727000" />
+      <workItem from="1667482806405" duration="5546000" />
+      <workItem from="1667813227648" duration="11066000" />
+      <workItem from="1667831540684" duration="868000" />
+      <workItem from="1667832439686" duration="1290000" />
+      <workItem from="1667913692133" duration="4052000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="765" y="235" key="#com.intellij.ide.util.MemberChooser" timestamp="1667821457450">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="765" y="235" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1667821457450" />
+    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1667815956804">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1667815956804" />
+    <state width="1876" height="264" key="GridCell.Tab.0.bottom" timestamp="1667918964813">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="264" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
+    <state width="1876" height="264" key="GridCell.Tab.0.center" timestamp="1667918964813">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="264" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
+    <state width="1876" height="264" key="GridCell.Tab.0.left" timestamp="1667918964813">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="264" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
+    <state width="1876" height="264" key="GridCell.Tab.0.right" timestamp="1667918964813">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="264" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
+    <state width="1876" height="342" key="GridCell.Tab.1.bottom" timestamp="1667833738788">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="342" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
+    <state width="1876" height="342" key="GridCell.Tab.1.center" timestamp="1667833738788">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="342" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
+    <state width="1876" height="342" key="GridCell.Tab.1.left" timestamp="1667833738788">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="342" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
+    <state width="1876" height="342" key="GridCell.Tab.1.right" timestamp="1667833738788">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1876" height="342" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
+    <state x="501" y="338" key="refactoring.ChangeSignatureDialog" timestamp="1667821647465">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="501" y="338" key="refactoring.ChangeSignatureDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1667821647465" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1667831875236">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1667831875236" />
+  </component>
+</project>

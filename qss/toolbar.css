@@ -1,0 +1,11 @@
+QToolBar{
+    padding: 9px;
+    /*background-color: lavender;*/
+    color: gray;
+    border-bottom: 3px solid gray;
+}
+QToolBar QWidget{
+    padding: 5px;
+    font-weight: bold;
+    color: gray;
+}

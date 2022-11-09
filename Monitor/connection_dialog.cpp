@@ -16,7 +16,7 @@ ConnectionDialog::ConnectionDialog(QWidget* parent, SocketAdapter* socket) :
 	StatusLabel->setMinimumHeight(25);
 	VBoxLayout->addWidget(StatusLabel);
 	VBoxLayout->addSpacing(10);
-	VBoxLayout->addLayout(FormLayout);	
+	VBoxLayout->addLayout(FormLayout);
 	FormLayout->addRow(tr("IP:"), IpLineEdit);
 	FormLayout->addRow(tr("Port:"), PortLineEdit);
 	VBoxLayout->addWidget(ConnectButton);

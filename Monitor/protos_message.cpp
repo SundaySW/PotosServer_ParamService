@@ -389,7 +389,6 @@ ProtosMessage& ProtosMessage::SetCanIdFields(ProtosMessage::MsgTypes msgType, uc
 	if (msgType != NONE) MsgType = msgType;
 	if (senderAddr) SenderAddr = senderAddr;
 	if (destAddr)	DestAddr = destAddr;
-	
 	return *this;
 }
 
@@ -435,7 +434,6 @@ ProtosMessage& ProtosMessage::SetParamField(ProtosMessage::ParamFields field, uc
 			if (fieldValue != QVariant())
 				FloatField = fieldValue.toFloat();
 			break;
-
 			// all other param fields are read only
 		}
 		break;

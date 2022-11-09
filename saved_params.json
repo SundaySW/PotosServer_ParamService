@@ -1,0 +1,61 @@
+{
+    "ConfObject": {
+        "ServerIP": "127.0.0.5",
+        "ServerPort": "3699"
+    },
+    "DBConfObject": {
+        "DatabaseName": "sa_pump_metrics",
+        "HostName": "localhost",
+        "Password": "2022!SA_protos_db",
+        "Port": "5432",
+        "UserName": "sa_params",
+        "autoconnect": true
+    },
+    "Params": [
+        {
+            "ID": 2,
+            "Note": "",
+            "Value": "",
+            "altName": "",
+            "dateTime": "",
+            "state": 1,
+            "writeToDB": false
+        },
+        {
+            "ID": 14,
+            "Note": "14",
+            "Value": "",
+            "altName": "",
+            "dateTime": "",
+            "state": 1,
+            "writeToDB": false
+        },
+        {
+            "ID": 18,
+            "Note": "First Param",
+            "Value": "333",
+            "altName": "ff",
+            "dateTime": "Вс ноя 6 00:11:16 2022",
+            "state": 0,
+            "writeToDB": true
+        },
+        {
+            "ID": 19,
+            "Note": "No",
+            "Value": "",
+            "altName": "dd",
+            "dateTime": "",
+            "state": 0,
+            "writeToDB": true
+        },
+        {
+            "ID": 22,
+            "Note": "HiHi!",
+            "Value": "0",
+            "altName": "",
+            "dateTime": "",
+            "state": 1,
+            "writeToDB": false
+        }
+    ]
+}

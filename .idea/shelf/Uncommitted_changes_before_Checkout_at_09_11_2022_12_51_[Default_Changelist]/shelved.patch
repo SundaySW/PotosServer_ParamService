@@ -1,0 +1,2075 @@
+Index: CMakeLists.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>cmake_minimum_required(VERSION 3.16)\r\n\r\nproject(PotosServer_ParamService C CXX ASM)\r\n\r\nset(CMAKE_CXX_STANDARD 20)\r\nset(CMAKE_AUTOMOC ON)\r\nset(CMAKE_AUTORCC ON)\r\nset(CMAKE_AUTOUIC ON)\r\nset(CMAKE_INCLUDE_CURRENT_DIR ON)\r\n\r\nset(CMAKE_EXPORT_COMPILE_COMMANDS ON)\r\n\r\n#if (${CMAKE_SYSTEM_NAME} MATCHES \"Windows\")\r\n#    enable_language(\"RC\")\r\n#    set (WIN32_RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/windows/MyApp.rc)\r\n#endif()\r\n\r\nset(qt_ver      Qt5)\r\nfind_package(${qt_ver}Widgets     REQUIRED)\r\nfind_package(${qt_ver}Gui         REQUIRED)\r\nfind_package(${qt_ver}Core        REQUIRED)\r\nfind_package(${qt_ver}Network     REQUIRED)\r\nfind_package(${qt_ver}SerialPort  REQUIRED)\r\n\r\nadd_compile_options(\r\n        -finput-charset=CP1251\r\n        -fexec-charset=CP866\r\n)\r\n\r\nfile(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS\r\n        ${CMAKE_CURRENT_SOURCE_DIR}/Monitor/*.*\r\n        ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat/*.*\r\n        )\r\n\r\nset(SOURCE_FILES\r\n        main.cpp\r\n        main_window.cpp\r\n        ${WIN32_RESOURCES}\r\n        ${SOURCES}\r\n        )\r\n\r\nadd_executable(${PROJECT_NAME}\r\n        ${SOURCE_FILES}\r\n        )\r\n\r\ntarget_include_directories(${PROJECT_NAME}\r\n        PRIVATE\r\n        ${CMAKE_CURRENT_SOURCE_DIR}/Monitor\r\n        ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat\r\n        )\r\n\r\ntarget_sources(${PROJECT_NAME}\r\n        PRIVATE\r\n        ${SOURCE_FILES}\r\n        )\r\n\r\ntarget_link_libraries(${PROJECT_NAME} ${qt_ver}::Core)\r\ntarget_link_libraries(${PROJECT_NAME} ${qt_ver}::Gui)\r\ntarget_link_libraries(${PROJECT_NAME} ${qt_ver}::Widgets)\r\ntarget_link_libraries(${PROJECT_NAME} ${qt_ver}::Network)\r\ntarget_link_libraries(${PROJECT_NAME} ${qt_ver}::SerialPort)\r\n\r\n#add_custom_command(\r\n#        TARGET ${PROJECT_NAME} POST_BUILD\r\n#        COMMAND windeployqt \"$<TARGET_FILE:${PROJECT_NAME}>\"\r\n#        VERBATIM)\r\n\r\n#target_compile_definitions(${PROJECT_NAME}\r\n#        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- CMakeLists.txt	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ CMakeLists.txt	(date 1667931738133)
+@@ -21,6 +21,8 @@
+ find_package(${qt_ver}Core        REQUIRED)
+ find_package(${qt_ver}Network     REQUIRED)
+ find_package(${qt_ver}SerialPort  REQUIRED)
++find_package(${qt_ver}Sql         REQUIRED)
++
+ 
+ add_compile_options(
+         -finput-charset=CP1251
+@@ -29,12 +31,18 @@
+ 
+ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor/*.*
++        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver/*.*
++        ${CMAKE_CURRENT_SOURCE_DIR}/TableModel/*.*
+         ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat/*.*
++        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item/*.*
++        ${CMAKE_CURRENT_SOURCE_DIR}/Settings/*.*
+         )
+ 
+ set(SOURCE_FILES
+         main.cpp
+         main_window.cpp
++        ParamService.cpp
++        Settings/Settings_dlg.cpp
+         ${WIN32_RESOURCES}
+         ${SOURCES}
+         )
+@@ -46,7 +54,11 @@
+ target_include_directories(${PROJECT_NAME}
+         PRIVATE
+         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor
++        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver
++        ${CMAKE_CURRENT_SOURCE_DIR}/TableModel
+         ${CMAKE_CURRENT_SOURCE_DIR}/protos_wghat
++        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item
++        ${CMAKE_CURRENT_SOURCE_DIR}/Settings/
+         )
+ 
+ target_sources(${PROJECT_NAME}
+@@ -59,6 +71,7 @@
+ target_link_libraries(${PROJECT_NAME} ${qt_ver}::Widgets)
+ target_link_libraries(${PROJECT_NAME} ${qt_ver}::Network)
+ target_link_libraries(${PROJECT_NAME} ${qt_ver}::SerialPort)
++target_link_libraries(${PROJECT_NAME} ${qt_ver}::Sql)
+ 
+ #add_custom_command(
+ #        TARGET ${PROJECT_NAME} POST_BUILD
+@@ -66,4 +79,4 @@
+ #        VERBATIM)
+ 
+ #target_compile_definitions(${PROJECT_NAME}
+-#        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
++#        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
+\ No newline at end of file
+Index: saved_params.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- saved_params.json	(date 1667916685441)
++++ saved_params.json	(date 1667916685441)
+@@ -0,0 +1,61 @@
++{
++    "ConfObject": {
++        "ServerIP": "127.0.0.5",
++        "ServerPort": "3699"
++    },
++    "DBConfObject": {
++        "DatabaseName": "sa_pump_metrics",
++        "HostName": "localhost",
++        "Password": "2022!SA_protos_db",
++        "Port": "5432",
++        "UserName": "sa_params",
++        "autoconnect": true
++    },
++    "Params": [
++        {
++            "ID": 2,
++            "Note": "",
++            "Value": "",
++            "altName": "",
++            "dateTime": "",
++            "state": 1,
++            "writeToDB": false
++        },
++        {
++            "ID": 14,
++            "Note": "14",
++            "Value": "",
++            "altName": "",
++            "dateTime": "",
++            "state": 1,
++            "writeToDB": false
++        },
++        {
++            "ID": 18,
++            "Note": "First Param",
++            "Value": "333",
++            "altName": "ff",
++            "dateTime": "Вс ноя 6 00:11:16 2022",
++            "state": 0,
++            "writeToDB": true
++        },
++        {
++            "ID": 19,
++            "Note": "No",
++            "Value": "",
++            "altName": "dd",
++            "dateTime": "",
++            "state": 0,
++            "writeToDB": true
++        },
++        {
++            "ID": 22,
++            "Note": "HiHi!",
++            "Value": "0",
++            "altName": "",
++            "dateTime": "",
++            "state": 1,
++            "writeToDB": false
++        }
++    ]
++}
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/vcs.xml	(date 1666606152875)
++++ .idea/vcs.xml	(date 1666606152875)
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++    <mapping directory="$PROJECT_DIR$/Ext_Libs/protos_core" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(date 1666606152860)
++++ .idea/misc.xml	(date 1666606152860)
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
++  <component name="JavaScriptSettings">
++    <option name="languageLevel" value="ES6" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/workspace.xml	(date 1667933593553)
++++ .idea/workspace.xml	(date 1667933593553)
+@@ -0,0 +1,253 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="BranchesTreeState">
++    <expand>
++      <path>
++        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
++      </path>
++      <path>
++        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
++      </path>
++      <path>
++        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
++      </path>
++    </expand>
++    <select>
++      <path>
++        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
++        <item name="BRANCH:df" type="e8cecc67:BranchNodeDescriptor" />
++      </path>
++    </select>
++  </component>
++  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
++    <generated>
++      <config projectName="PotosServer_ParamService" targetName="PotosServer_ParamService" />
++      <config projectName="PotosServer_ParamService" targetName="PotosServer_ParamService_autogen" />
++    </generated>
++  </component>
++  <component name="CMakeSettings">
++    <configurations>
++      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
++    </configurations>
++  </component>
++  <component name="ChangeListManager">
++    <list default="true" id="0214efdf-1316-4fdf-a60d-df607963b2d3" name="Default Changelist" comment="">
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++    </list>
++    <option name="SHOW_DIALOG" value="false" />
++    <option name="HIGHLIGHT_CONFLICTS" value="true" />
++    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
++    <option name="LAST_RESOLUTION" value="IGNORE" />
++  </component>
++  <component name="ClangdSettings">
++    <option name="formatViaClangd" value="false" />
++  </component>
++  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
++  <component name="FileTemplateManagerImpl">
++    <option name="RECENT_TEMPLATES">
++      <list>
++        <option value="CSS File" />
++      </list>
++    </option>
++  </component>
++  <component name="Git.Settings">
++    <option name="RECENT_BRANCH_BY_REPOSITORY">
++      <map>
++        <entry key="$PROJECT_DIR$" value="ff" />
++      </map>
++    </option>
++    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
++    <option name="ROOT_SYNC" value="DONT_SYNC" />
++  </component>
++  <component name="ProjectId" id="2GZplreTYHpo15Rj1ZmZGjL2roG" />
++  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
++  <component name="ProjectViewState">
++    <option name="hideEmptyMiddlePackages" value="true" />
++    <option name="showLibraryContents" value="true" />
++  </component>
++  <component name="PropertiesComponent">
++    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
++    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
++    <property name="WebServerToolWindowFactoryState" value="false" />
++    <property name="cf.first.check.clang-format" value="false" />
++    <property name="list.type.of.created.stylesheet" value="CSS" />
++    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.github.ui.GithubSettingsConfigurable" />
++  </component>
++  <component name="RecentsManager">
++    <key name="MoveFile.RECENT_KEYS">
++      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService\qss" />
++      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService" />
++      <recent name="C:\Users\outlaw\CLionProjects\PotosServer_ParamService\Settings" />
++    </key>
++  </component>
++  <component name="RunManager" selected="CMake Application.PotosServer_ParamService">
++    <configuration name="PotosServer_ParamService" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="PotosServer_ParamService" TARGET_NAME="PotosServer_ParamService" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="PotosServer_ParamService" RUN_TARGET_NAME="PotosServer_ParamService">
++      <method v="2">
++        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
++      </method>
++    </configuration>
++    <configuration name="PotosServer_ParamService_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="PotosServer_ParamService" TARGET_NAME="PotosServer_ParamService_autogen" CONFIG_NAME="Debug">
++      <method v="2">
++        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
++      </method>
++    </configuration>
++    <list>
++      <item itemvalue="CMake Application.PotosServer_ParamService" />
++      <item itemvalue="CMake Application.PotosServer_ParamService_autogen" />
++    </list>
++  </component>
++  <component name="SvnConfiguration">
++    <configuration />
++  </component>
++  <component name="TaskManager">
++    <task active="true" id="Default" summary="Default task">
++      <changelist id="0214efdf-1316-4fdf-a60d-df607963b2d3" name="Default Changelist" comment="" />
++      <created>1666606113151</created>
++      <option name="number" value="Default" />
++      <option name="presentableId" value="Default" />
++      <updated>1666606113151</updated>
++      <workItem from="1666606114617" duration="1608000" />
++      <workItem from="1666618609730" duration="4445000" />
++      <workItem from="1666710694469" duration="20000" />
++      <workItem from="1666710719634" duration="8783000" />
++      <workItem from="1666777875070" duration="3846000" />
++      <workItem from="1666864044259" duration="13776000" />
++      <workItem from="1666950424776" duration="12660000" />
++      <workItem from="1667217440081" duration="7735000" />
++      <workItem from="1667297075072" duration="17021000" />
++      <workItem from="1667381611311" duration="12542000" />
++      <workItem from="1667398754779" duration="3205000" />
++      <workItem from="1667469205638" duration="727000" />
++      <workItem from="1667482806405" duration="5546000" />
++      <workItem from="1667813227648" duration="11066000" />
++      <workItem from="1667831540684" duration="868000" />
++      <workItem from="1667832439686" duration="1290000" />
++      <workItem from="1667913692133" duration="4052000" />
++      <workItem from="1667933589540" duration="3000" />
++    </task>
++    <servers />
++  </component>
++  <component name="TypeScriptGeneratedFilesManager">
++    <option name="version" value="2" />
++  </component>
++  <component name="Vcs.Log.Tabs.Properties">
++    <option name="TAB_STATES">
++      <map>
++        <entry key="MAIN">
++          <value>
++            <State>
++              <option name="FILTERS">
++                <map>
++                  <entry key="branch">
++                    <value>
++                      <list>
++                        <option value="df" />
++                      </list>
++                    </value>
++                  </entry>
++                </map>
++              </option>
++            </State>
++          </value>
++        </entry>
++      </map>
++    </option>
++    <option name="RECENT_FILTERS">
++      <map>
++        <entry key="Branch">
++          <value>
++            <list>
++              <RecentGroup>
++                <option name="FILTER_VALUES">
++                  <option value="main" />
++                </option>
++              </RecentGroup>
++              <RecentGroup>
++                <option name="FILTER_VALUES">
++                  <option value="ff" />
++                </option>
++              </RecentGroup>
++              <RecentGroup>
++                <option name="FILTER_VALUES">
++                  <option value="HEAD" />
++                </option>
++              </RecentGroup>
++            </list>
++          </value>
++        </entry>
++      </map>
++    </option>
++    <option name="oldMeFiltersMigrated" value="true" />
++  </component>
++  <component name="WindowStateProjectService">
++    <state x="737" y="321" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1667932050771">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="737" y="321" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1667932050771" />
++    <state x="765" y="235" key="#com.intellij.ide.util.MemberChooser" timestamp="1667821457450">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="765" y="235" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1667821457450" />
++    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1667815956804">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1667815956804" />
++    <state x="572" y="106" key="CommitChangelistDialog2" timestamp="1667932131024">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="572" y="106" key="CommitChangelistDialog2/0.0.1920.1040@0.0.1920.1040" timestamp="1667932131024" />
++    <state width="1876" height="264" key="GridCell.Tab.0.bottom" timestamp="1667918964813">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="264" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
++    <state width="1876" height="264" key="GridCell.Tab.0.center" timestamp="1667918964813">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="264" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
++    <state width="1876" height="264" key="GridCell.Tab.0.left" timestamp="1667918964813">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="264" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
++    <state width="1876" height="264" key="GridCell.Tab.0.right" timestamp="1667918964813">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="264" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1667918964813" />
++    <state width="1876" height="342" key="GridCell.Tab.1.bottom" timestamp="1667833738788">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="342" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
++    <state width="1876" height="342" key="GridCell.Tab.1.center" timestamp="1667833738788">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="342" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
++    <state width="1876" height="342" key="GridCell.Tab.1.left" timestamp="1667833738788">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="342" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
++    <state width="1876" height="342" key="GridCell.Tab.1.right" timestamp="1667833738788">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state width="1876" height="342" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1667833738788" />
++    <state x="552" y="252" key="Vcs.Push.Dialog.v2" timestamp="1667931799735">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="552" y="252" key="Vcs.Push.Dialog.v2/0.0.1920.1040@0.0.1920.1040" timestamp="1667931799735" />
++    <state x="92" y="92" width="1736" height="856" key="dock-window-1" timestamp="1667932128573">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="92" y="92" width="1736" height="856" key="dock-window-1/0.0.1920.1040@0.0.1920.1040" timestamp="1667932128573" />
++    <state x="501" y="338" key="refactoring.ChangeSignatureDialog" timestamp="1667821647465">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="501" y="338" key="refactoring.ChangeSignatureDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1667821647465" />
++    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1667831875236">
++      <screen x="0" y="0" width="1920" height="1040" />
++    </state>
++    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1667831875236" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/PotosServer_ParamService.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/PotosServer_ParamService.iml	(date 1666606152828)
++++ .idea/PotosServer_ParamService.iml	(date 1666606152828)
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module classpath="CMake" type="CPP_MODULE" version="4" />
+\ No newline at end of file
+Index: .idea/modules.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/modules.xml	(date 1666606152906)
++++ .idea/modules.xml	(date 1666606152906)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectModuleManager">
++    <modules>
++      <module fileurl="file://$PROJECT_DIR$/.idea/PotosServer_ParamService.iml" filepath="$PROJECT_DIR$/.idea/PotosServer_ParamService.iml" />
++    </modules>
++  </component>
++</project>
+\ No newline at end of file
+Index: qss/logWidget.css
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- qss/logWidget.css	(date 1667829752010)
++++ qss/logWidget.css	(date 1667829752010)
+@@ -0,0 +1,4 @@
++QListWidget{
++    border-bottom: 1px solid lightgrey;
++    selection-color: green;
++}
+\ No newline at end of file
+Index: main.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <iostream>\r\n#include <qapplication.h>\r\n#include <qmessagebox.h>\r\n#include \"main_window.h\"\r\n\r\nint main(int argv, char** argc)\r\n{\r\n    QApplication app(argv, argc);\r\n    MainWindow mainWin(argv, argc);\r\n//    mainWin.setWindowTitle(QStringLiteral(\"CAN firmware loader\"));\r\n    mainWin.resize(550, 400);\r\n    mainWin.show();\r\n    int res = app.exec();\r\n    return res;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- main.cpp	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ main.cpp	(date 1667830362006)
+@@ -8,7 +8,7 @@
+     QApplication app(argv, argc);
+     MainWindow mainWin(argv, argc);
+ //    mainWin.setWindowTitle(QStringLiteral("CAN firmware loader"));
+-    mainWin.resize(550, 400);
++    mainWin.resize(700, 550);
+     mainWin.show();
+     int res = app.exec();
+     return res;
+Index: Settings/ServerConnectWidget.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/ServerConnectWidget.cpp	(date 1667819595890)
++++ Settings/ServerConnectWidget.cpp	(date 1667819595890)
+@@ -0,0 +1,87 @@
++//
++// Created by outlaw on 01.11.2022.
++//
++
++#include <QtWidgets/QFormLayout>
++#include <QtWidgets/QLabel>
++#include "ServerConnectWidget.h"
++#include "QJsonObject"
++
++ServerConnectWidget::ServerConnectWidget(SocketAdapter* socket, QJsonObject& JsonConf)
++    : AddrEdit(new QLineEdit("127.0.0.5",this))
++    , PortEdit(new QLineEdit("3699", this))
++    , connectBtn(new QPushButton(tr(""), this))
++    , Socket(socket)
++    , statusLabel(new QLabel("", this))
++    , savedConf(JsonConf)
++{
++    Set();
++    connectToSocket();
++    auto *layout = new QFormLayout();
++    layout->setContentsMargins(30, 30, 30, 30);
++    auto label = new QLabel("Server connection", this);
++    label->setAlignment(Qt::AlignTop);
++    layout->addRow(label);
++    layout->addRow(QString("IP"), AddrEdit);
++    layout->addRow(QString("Port"),  PortEdit);
++    layout->addWidget(connectBtn);
++    statusLabel->setAlignment(Qt::AlignHCenter);
++    statusLabel->setMinimumSize(statusLabel->sizeHint());
++    layout->addWidget(statusLabel);
++    if(Socket->IsConnected()) {
++        connectBtn->setText("Connected - Save and reconnect");
++        statusLabel->setText(tr("Connected"));
++        statusLabel->setStyleSheet("color : green");
++    }
++    else {
++        connectBtn->setText("Disconnected - Save and connect");
++        statusLabel->setStyleSheet("color : blue");
++        statusLabel->setText(tr("Disconnected - press to connect"));
++    }
++
++    connect(connectBtn, &QPushButton::clicked, [this]() {
++        Save();
++        if (Socket->IsConnected())
++        {
++            Socket->Disconnect(1000);
++            statusLabel->setStyleSheet("color : blue");
++            statusLabel->setText(tr("Disconnected - press to connect"));
++            connectToSocket();
++        }
++        else
++            connectToSocket();
++    });
++    this->setLayout(layout);
++}
++
++bool ServerConnectWidget::connectToSocket(){
++    QString SocketIp   = AddrEdit->text();
++    QString SocketPort = PortEdit->text();
++    if (Socket->Connect(SocketIp, SocketPort.toInt(), 1000))
++    {
++        connectBtn->setText("Connected - Save and reconnect");
++        statusLabel->setText(tr("Connected"));
++        statusLabel->setStyleSheet("color : green");
++    }
++    else
++    {
++        connectBtn->setText("Disconnected - Save and connect");
++        statusLabel->setText(tr("Error on connection"));
++        statusLabel->setStyleSheet("color : red");
++    }
++}
++
++void ServerConnectWidget::Set()
++{
++    auto confObject = savedConf.value("ConfObject");
++    AddrEdit->setText(confObject["ServerIP"].toString());
++    PortEdit->setText(confObject["ServerPort"].toString());
++}
++
++void ServerConnectWidget::Save() {
++    auto str = AddrEdit->text();
++    QJsonObject confObj;
++    confObj["ServerIP"] = str.isEmpty() ? "127.0.0.5" : str;
++    confObj["ServerPort"] = PortEdit->text();
++    savedConf["ConfObject"] = confObj;
++}
+\ No newline at end of file
+Index: Monitor/connection_dialog.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include \"connection_dialog.h\"\r\n\r\nConnectionDialog::ConnectionDialog(QWidget* parent, SocketAdapter* socket) :\r\n\tQDialog(parent),\r\n\tVBoxLayout(new QVBoxLayout(this)),\r\n\tFormLayout(new QFormLayout(this)),\r\n  \tStatusLabel(new QLabel(tr(\"PROTOS BUS Monitor is disconnected now\"), this)),\r\n\tPortLineEdit(new QLineEdit(tr(\"3699\"), this)),\r\n\tIpLineEdit(new QLineEdit(tr(\"127.0.0.1\"), this)),\r\n\tConnectButton(new QPushButton(tr(\"Connect\"), this)),\r\n\tSocket(socket)\r\n{\r\n\tsetWindowTitle(tr(\"Connection Settings\"));\t\r\n\tStatusLabel->setWordWrap(true);\r\n\tStatusLabel->setMinimumWidth(210);\r\n\tStatusLabel->setMinimumHeight(25);\r\n\tVBoxLayout->addWidget(StatusLabel);\r\n\tVBoxLayout->addSpacing(10);\r\n\tVBoxLayout->addLayout(FormLayout);\t\r\n\tFormLayout->addRow(tr(\"IP:\"), IpLineEdit);\r\n\tFormLayout->addRow(tr(\"Port:\"), PortLineEdit);\r\n\tVBoxLayout->addWidget(ConnectButton);\r\n\t\r\n\tConnectionTimer.setSingleShot(true);\t\r\n\r\n\tif (Socket->IsConnected())\r\n\t{\r\n\t\tQString SocketIp   = Socket->GetIp();\r\n\t\tQString SocketPort = QString::number(Socket->GetPort());\r\n\t\tQString LabelText  = tr(\"Sucsesfully connected to\\n Host Server: IP: %1, Port: %2\").arg(SocketIp).arg(SocketPort);\r\n\t\tStatusLabel->setText(LabelText);\r\n\t\tIpLineEdit->setText(SocketIp);\t\t\t\r\n\t\tPortLineEdit->setText(SocketPort);\r\n\t\tIpLineEdit->setEnabled(false);\r\n\t\tPortLineEdit->setEnabled(false);\r\n\t\tConnectButton->setText(tr(\"Disconnect\"));\t\t\r\n\t\tResult = 1;\r\n\t}\r\n\telse\r\n\t{\t\t\r\n\t\tQString LabelText  = tr(\"Disconnected from Host Server now\");\r\n\t\tStatusLabel->setText(LabelText);\r\n\t\tIpLineEdit->setEnabled(true); \r\n\t\tPortLineEdit->setEnabled(true);\r\n\t\tConnectButton->setText(tr(\"Connect\"));\t\t\r\n\t\tResult = 0;\r\n\t}\r\n\r\n\tconnect(ConnectButton, SIGNAL(clicked(bool)), this, SLOT(on_ConnectButton_clicked(bool)));\t\r\n}\r\n\r\nConnectionDialog::~ConnectionDialog()\r\n{\r\n}\r\n\r\nvoid ConnectionDialog::closeEvent(QCloseEvent* event)\r\n{\r\n\tsetResult(Result);\r\n}\r\n\r\nvoid ConnectionDialog::on_ConnectButton_clicked(bool clicked)\r\n{\r\n\tif (ConnectButton->text() == tr(\"Connect\"))\r\n\t{\r\n\t\tQString SocketIp   = IpLineEdit->text();\r\n\t\tQString SocketPort = PortLineEdit->text();\r\n\t\tStatusLabel->setText(tr(\"Connecting now to\\nHost Server: IP: %1, Port: %2\").arg(SocketIp).arg(SocketPort));\t\t\r\n\t\tif (Socket->Connect(SocketIp, SocketPort.toInt(), 1000))\r\n\t\t{\r\n\t\t\tConnectButton->setText(tr(\"Disconnect\"));\r\n\t\t\tIpLineEdit->setEnabled(false);\r\n\t\t\tPortLineEdit->setEnabled(false);\r\n\t\t\tStatusLabel->setStyleSheet(\"color : black\");\r\n\t\t\tStatusLabel->setText(tr(\"Succsesfully connected to\\nHost Server: IP: %1, Port: %2\").arg(SocketIp).arg(SocketPort));\r\n\t\t\tStatusLabel->setStyleSheet(\"color : black\");\r\n\t\t\tResult = 1;\r\n\t\t\tclose();\r\n\t\t}\r\n\t\telse\r\n\t\t{\r\n\t\t\tStatusLabel->setStyleSheet(\"color : 0x0000ff\");\r\n\t\t\tStatusLabel->setText(tr(\"Unable to connect to\\nHost Server: IP: %1, Port: %2\").arg(SocketIp).arg(SocketPort));\r\n\t\t\tStatusLabel->setStyleSheet(\"color : red\");\r\n\t\t\tResult = 0;\r\n\t\t}\r\n\t}\r\n\telse\r\n\t{\r\n\t\tSocket->Disconnect(1000);\r\n\t\tStatusLabel->setStyleSheet(\"color : black\");\r\n\t\tStatusLabel->setText(tr(\"Disconnected from Host Server now\"));\t\t\r\n\t\tIpLineEdit->setEnabled(true);\r\n\t\tPortLineEdit->setEnabled(true);\t\r\n\t\tConnectButton->setText(tr(\"Connect\"));\r\n\t\tResult = 0;\r\n\t}\t\r\n}\r\n\r\nbool ConnectionDialog::isConnected() const {\r\n    return Socket->IsConnected();\r\n}\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Monitor/connection_dialog.cpp	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ Monitor/connection_dialog.cpp	(date 1666793934697)
+@@ -16,7 +16,7 @@
+ 	StatusLabel->setMinimumHeight(25);
+ 	VBoxLayout->addWidget(StatusLabel);
+ 	VBoxLayout->addSpacing(10);
+-	VBoxLayout->addLayout(FormLayout);	
++	VBoxLayout->addLayout(FormLayout);
+ 	FormLayout->addRow(tr("IP:"), IpLineEdit);
+ 	FormLayout->addRow(tr("Port:"), PortLineEdit);
+ 	VBoxLayout->addWidget(ConnectButton);
+Index: Param_Item/ParamItem.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Param_Item/ParamItem.cpp	(date 1667816794879)
++++ Param_Item/ParamItem.cpp	(date 1667816794879)
+@@ -0,0 +1,108 @@
++//
++// Created by outlaw on 27.10.2022.
++//
++
++#include "ParamItem.h"
++
++#include <utility>
++
++ ParamItem::ParamItem(uchar incomeID)
++    :ID(incomeID),
++    Value (QObject::tr("")),
++    Note(("")),
++    writeToDB(false),
++    state(No_DB)
++{
++}
++
++ParamItem::ParamItem(QJsonObject& obj)
++{
++    ID = obj["ID"].toInt();
++    altName = obj["altName"].toString();
++    Value = obj["Value"].toString();;
++    Note = obj["Note"].toString();
++    writeToDB = obj["writeToDB"].toBool();
++    state = States(obj["state"].toInt());
++    lastValueTime = QDateTime::fromString(obj["dateTime"].toString());
++}
++
++
++ParamItem::ParamItem(uchar inID, QString inNote, bool inToDB)
++    :ID(inID),
++    Note(std::move(inNote)),
++    writeToDB(inToDB)
++{
++    state = inToDB?InDB:No_DB;
++}
++
++uchar ParamItem::getId() const {
++    return ID;
++}
++
++const QVariant &ParamItem::getValue() const {
++    return Value;
++}
++
++const QString &ParamItem::getNote() const {
++    return Note;
++}
++
++ParamItem::States ParamItem::getState() const {
++    return state;
++}
++
++bool ParamItem::isWriteToDb() const {
++    return writeToDB;
++}
++
++void ParamItem::setValue(const QVariant &value) {
++    Value = value;
++}
++
++void ParamItem::setNote(const QString &note) {
++    Note = note;
++}
++
++void ParamItem::setState(ParamItem::States inState) {
++    ParamItem::state = inState;
++}
++
++void ParamItem::setWriteToDb(bool writeToDb) {
++    writeToDB = writeToDb;
++}
++
++QString ParamItem::getLastValueTime(){
++    if(lastValueTime.isNull())
++        return QString("-- --");
++    return lastValueTime.toString(QString("hh:mm:ss:zzz"));
++}
++
++QString ParamItem::getLastValueDay() {
++    if(lastValueTime.isNull())
++        return QString("-- --");
++    return lastValueTime.toString(QString("dd.mm"));
++}
++
++void ParamItem::setLastValueTime(const QDateTime& valueTime) {
++    ParamItem::lastValueTime = valueTime;
++}
++
++void ParamItem::setAltName(const QString& name) {
++    altName = name;
++}
++
++const QString& ParamItem::getAltName() {
++    return altName;
++}
++
++QJsonObject ParamItem::getJsonObject() {
++    QJsonObject retVal;
++    retVal["ID"] = ID;
++    retVal["altName"] = altName;
++    retVal["Value"] = Value.toString();
++    retVal["Note"] = Note;
++    retVal["state"] = static_cast<int>(state);
++    retVal["writeToDB"] = writeToDB;
++    retVal["dateTime"] = lastValueTime.toString();
++    return retVal;
++}
+\ No newline at end of file
+Index: Monitor/protos_message.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include \"protos_message.h\"\r\n\r\nProtosMessage::ProtosMessage() : CanId(0), Dlc(0)\r\n{\r\n\t//qRegisterMetaType <ProtosMessage> (\"ProtosMessage\");\r\n\tfor (int i = 0; i < 8; i++)\tData[i] = 0;\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, ProtosMessage::MsgTypes msgType, uchar dlc, uchar data0, uchar data1, uchar data2, uchar data3, uchar data4, uchar data5, uchar data6, uchar data7, uchar data8)\t:\r\n\tCanId(0)\r\n{\r\n    Dlc = dlc;\r\n    DestAddr = destAddr;\r\n    SenderAddr = senderAddr;\r\n    MsgType = msgType;\r\n\tData[0] = data0;\r\n\tData[1] = data1;\r\n\tData[2] = data2;\r\n\tData[3] = data3;\r\n\tData[4] = data4;\r\n\tData[5] = data5;\r\n\tData[6] = data6;\r\n\tData[7] = data7;\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, ProtosMessage::MsgTypes msgType, ProtosMessage::ParamFields paramField, QVariant fieldValue) : CanId(0)\r\n{\r\n\tSetParamField(paramField, paramId, msgType, fieldValue, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, char charValue, ProtosMessage::MsgTypes msgType) : CanId(0)\r\n{\r\n\tSetParamValue(charValue, paramId, msgType, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, short shortValue, ProtosMessage::MsgTypes msgType) : CanId(0)\r\n{\r\n\tSetParamValue(shortValue, paramId, msgType, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, int intValue, ProtosMessage::MsgTypes msgType) : CanId(0)\r\n{\r\n\tSetParamValue(intValue, paramId, msgType, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, float floatValue, ProtosMessage::MsgTypes msgType) : CanId(0)\r\n{\r\n\tSetParamValue(floatValue, paramId, msgType, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, const QString& stringValue, ProtosMessage::MsgTypes msgType) : CanId(0)\r\n{\r\n\tSetParamValue(stringValue, paramId, msgType, destAddr, senderAddr);\r\n}\r\n\r\nProtosMessage::ProtosMessage(const QByteArray& byteArray) : CanId(0), Dlc(0)\r\n{\r\n\tfor (int i = 0; i < 8; i++)\tData[i] = 0;\r\n\tFromByteArray(byteArray);\r\n}\r\n\r\nProtosMessage::ProtosMessage(const QString& string) : CanId(0), Dlc(0)\r\n{\r\n\tfor (int i = 0; i < 8; i++)\tData[i] = 0;\r\n\tFromString(string);\r\n}\r\n\r\nProtosMessage::~ProtosMessage()\r\n{\r\n}\r\n\r\nvoid ProtosMessage::FromByteArray(const QByteArray& byteArray)\r\n{\t\r\n\tint maxSize = IdLng + 8;\r\n\tint byteArraySize = byteArray.size();\r\n\tif (byteArraySize < maxSize) \r\n\t\tmaxSize = byteArraySize;\r\n\tDlc = byteArraySize - IdLng;\r\n\t\r\n\tfor (int byteIndex = 0; byteIndex < maxSize; byteIndex++)\r\n\t{\r\n\t\tif (byteIndex < IdLng)\r\n\t\t\tIdBytes[byteIndex] = byteArray.at(byteIndex);\r\n\t\telse\r\n\t\t\tData[byteIndex - IdLng] = byteArray.at(byteIndex);\t\t\r\n\t}\r\n}\r\n\r\nbool ProtosMessage::FromString(const QString& st)\r\n{\r\n\tQStringList stList(st.split('.'));\r\n\tif (stList.size() != 3)\r\n\t\treturn false;\r\n\r\n\tbool isConvOk;\r\n\tint dlc = stList.at(1).toInt(&isConvOk, 16);\r\n\tQString idSt = stList.at(0).trimmed();\r\n\tQString dataSt = stList.at(2).trimmed();\r\n\tif (!isConvOk || idSt.size() != 8 || 2 * dlc != dataSt.size())\r\n\t\treturn false;\r\n\r\n\tDlc = dlc;\r\n\tint len = IdLng + dlc;\r\n\tuchar temp[12];\r\n\tfor (int i = 0; i < 4; i++)\r\n\t{\r\n\t\ttemp[i] = idSt.right(2).toInt(&isConvOk, 16);\r\n\t\tif (!isConvOk)\r\n\t\t\treturn false;\r\n\t\telse\r\n\t\t\tidSt.chop(2);\r\n\t}\r\n\tfor (int i = IdLng; i < len; i++)\r\n\t{\r\n\t\ttemp[i] = dataSt.left(2).toInt(&isConvOk, 16);\r\n\t\tif (!isConvOk)\r\n\t\t\treturn false;\r\n\t\telse\r\n\t\t\tdataSt.remove(0, 2);\r\n\t}\r\n\tfor (int i = 0; i < len; i++)\r\n\t\toperator[](i) = temp[i];\r\n\treturn true;\r\n}\r\n\r\nuchar ProtosMessage::GetCmdId() const\r\n{\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MsgTypes::MCMD:\r\n\tcase MsgTypes::MANS:\r\n\tcase MsgTypes::SCMD:\r\n\tcase MsgTypes::SANS:\r\n\tcase MsgTypes::MERR:\r\n\tcase MsgTypes::SERR:\r\n\t\treturn CmdId;\r\n\tdefault:\r\n\t\treturn 0;\t\t\r\n\t}\r\n}\r\n\r\nQString ProtosMessage::GetErrorMsg() const\r\n{\r\n\tQString errorMsg, cmd, id, err;\r\n\t\r\n\tcmd = QString(\"%1\").arg(CmdId, ToHexStr).toUpper();\r\n\terr = QString(\"%1\").arg(Data[1], ToHexStr).toUpper();\r\n\tid  = QString(\"%1\").arg(Data[2], ToHexStr).toUpper();\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MERR:\t\t\r\n\t\treturn QObject::tr(\"Got MERR 0x%1 on 0x%2 cmd from ID 0x%3\").arg(err, cmd, id);\t\t\r\n\tcase SERR:\r\n\t\terrorMsg = QObject::tr(\"Got SERR 0x%1 on 0x%2 cmd from ID 0x%3\").arg(err, cmd, id);\r\n\r\n\t\tswitch (CmdId)\r\n\t\t{\r\n\t\tcase 0xA0: //OWSearch cmd has no error codes \r\n\t\t\tbreak;\r\n\t\tcase 0xA2:\r\n\t\t\tswitch (Data[1])\r\n\t\t\t{\r\n\t\t\tcase 0x01:\r\n\t\t\t\terrorMsg = QObject::tr(\"1-Wire parameter with ID 0x%1 not found\").arg(id);\r\n\t\t\t\tbreak;\r\n\t\t\t}\r\n\t\tcase 0xA5: //OWParams request cmd has no error codes\r\n\t\t\tbreak;\r\n\t\tcase 0xA7: // ERR for Th, Tl, Resolition set\r\n\t\t\tbreak;\r\n\t\tcase 0xA8: // ERR for Th, Tl, Resolution request\r\n\t\t\tbreak;\r\n\t\tdefault:\r\n\t\t\tbreak;\r\n\t\t}\r\n\t\treturn errorMsg;\r\n\tcase PERR:\t\t\r\n\t\tid.arg(Data[0], ToHexStr).toUpper();\r\n\t\terr.arg(Data[1], ToHexStr).toUpper();\r\n\t\treturn QObject::tr(\"Got PERR 0x%1 from ID 0x%2 \").arg(err, id);\t\t\r\n\tdefault:\r\n\t\treturn \"\";\r\n\t}\r\n}\r\n\r\nQString ProtosMessage::GetMsgType() const\r\n{\r\n\treturn GetMsgTypeName(MsgType);\r\n}\r\n\r\nQString ProtosMessage::GetMsgTypeName(uchar msgType)\r\n{\r\n\tswitch (msgType)\r\n\t{\r\n\tcase NONE: return \"NONE\";\r\n\tcase MCMD: return \"M.CMD\";\r\n\tcase SCMD: return \"S.CMD\";\r\n\tcase MANS: return \"M.ANS\";\r\n\tcase SANS: return \"S.ANS\";\r\n\tcase MERR: return \"M.ERR\";\r\n\tcase SERR: return \"S.ERR\";\r\n\tcase PREQ: return \"P.REQ\";\r\n\tcase PANS: return \"P.ANS\";\r\n\tcase PSET: return \"P.SET\";\r\n\tcase PERR: return \"P.ERR\";\r\n\tdefault:   return \"UNDEFINED\";\r\n\t}\r\n}\r\n\r\nQString ProtosMessage::GetParamField() const\r\n{\r\n\treturn GetParamFieldName(ParamField);\r\n}\r\n\r\nuchar ProtosMessage::GetParamFieldLength() const\r\n{\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MsgTypes::PANS:\r\n\tcase MsgTypes::PSET:\r\n\t\tswitch (ParamFieldType)\r\n\t\t{\r\n\t\tcase ParamFieldTypes::VOID:\t\treturn 0;\r\n\t\tcase ParamFieldTypes::CHAR:\t\treturn 1;\r\n\t\tcase ParamFieldTypes::SHORT:\treturn 2;\r\n\t\tcase ParamFieldTypes::LONG:\t\treturn 4;\r\n\t\tcase ParamFieldTypes::FLOAT:\treturn 4;\r\n\t\tcase ParamFieldTypes::STRING:\treturn 6;\r\n\t\tcase ParamFieldTypes::TIME:\t\treturn 4;\r\n\t\tcase ParamFieldTypes::RESERVED:\treturn 0;\r\n\t\tdefault: return 0;\r\n\t\t}\r\n\tdefault:\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nQString ProtosMessage::GetParamFieldName(uchar field)\r\n{\r\n\tswitch (field)\r\n\t{\r\n\tcase ID:\treturn \"ID\";\r\n\tcase TYPE:\treturn \"TYPE\";\r\n\tcase VALUE:\treturn \"VALUE\";\r\n\tcase SEND_RATE:\treturn \"SEND_RATE\";\r\n\tcase READ_ONLY:\treturn \"READ_ONLY\";\r\n\tcase SEND_TIME:\treturn \"SEND_TIME\";\r\n\tcase UPDATE_BEFORE_READ: return \"UPDATE_BEFORE_READ\";\r\n\tcase UPDATE_RATE: return \"UPDATE_RATE\";\r\n\tcase UPDATE_TIME: return \"UPDATE_TIME\";\r\n\tcase CTRL_RATE:\treturn \"CTRL_RATE\";\r\n\tcase CTRL_TIME:\treturn \"CTRL_TIME\";\r\n\tcase SET_ACK:\treturn \"SET_ACK\";\r\n\tcase CTRL_ACK:\treturn \"CTRL_ACK\";\r\n\tcase MULT:\t\treturn \"MULT\";\r\n\tcase OFFSET:\treturn \"OFFSET\";\r\n\tdefault: return \"UNDEFINED\";\r\n\t}\r\n}\r\n\r\nQString ProtosMessage::GetParamFieldTypeName(uchar fieldType)\r\n{\r\n\tswitch (fieldType)\r\n\t{\r\n\tcase VOID:\treturn \"VOID\";\r\n\tcase CHAR:\treturn \"CHAR\";\r\n\tcase SHORT: return \"SHORT\";\r\n\tcase LONG:\treturn \"LONG\";\r\n\tcase FLOAT: return \"FLOAT\";\r\n\tcase STRING:return \"STRING\";\r\n\tcase TIME:\treturn \"TIME\";\r\n\tcase RESERVED: return \"RESERVED\";\r\n\tdefault: return \"UNDEFINED\";\r\n\t};\r\n}\r\n\r\nQVariant ProtosMessage::GetParamFieldValue() const\r\n{\r\n\tQString st(\"\"); \t\r\n\t\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MsgTypes::PANS:\r\n\tcase MsgTypes::PSET:\r\n\t\tswitch (ParamFieldType)\r\n\t\t{\r\n\t\tcase ParamFieldTypes::VOID:\r\n\t\t\treturn 0;\r\n\t\tcase ParamFieldTypes::CHAR:\t\t\t\r\n\t\t\treturn QVariant(CharField & 0x80 ? CharField | 0xffffff00 : CharField);\t\t\t\r\n\t\tcase ParamFieldTypes::SHORT:\r\n\t\t\treturn QVariant(ShortField & 0x8000 ? ShortField | 0xffff0000 : ShortField);\t\r\n\t\tcase ParamFieldTypes::LONG:\t\r\n\t\t\treturn QVariant(LongField);\t\t\r\n\t\tcase ParamFieldTypes::FLOAT:\t\t\t\t\r\n\t\t\treturn QVariant(FloatField);\r\n\t\tcase ParamFieldTypes::STRING:\t\t\t\t\r\n\t\t\tfor (int i = 2; i < 8; i++)\r\n\t\t\t\tst.append(Data[i]);\r\n\t\t\treturn QVariant(st);\t\t\t\t\t\t\r\n\t\tcase ParamFieldTypes::TIME:\t\t\t\r\n\t\t\treturn QVariant(QTime(0, 0, 0, 0).addMSecs(UlongField));\r\n\t\tcase ParamFieldTypes::RESERVED:\r\n\t\t\treturn QVariant();\r\n\t\tdefault:\r\n\t\t\treturn QVariant();\r\n\t\t}\r\n\tdefault:\r\n\t\treturn QVariant();\r\n\t}\r\n}\r\n\r\nuchar ProtosMessage::GetParamId() const\r\n{\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MsgTypes::MCMD:\r\n\tcase MsgTypes::MANS:\r\n\tcase MsgTypes::SCMD:\r\n\tcase MsgTypes::SANS:\r\n\t\treturn Data[1];\r\n\t\r\n\tcase MsgTypes::MERR:\r\n\tcase MsgTypes::SERR:\r\n\t\treturn Data[2];\r\n\t\r\n\tcase MsgTypes::PREQ:\r\n\tcase MsgTypes::PSET:\r\n\tcase MsgTypes::PANS:\r\n\tcase MsgTypes::PERR:\r\n\t\treturn ParamId;\r\n\t\r\n\tdefault:\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nbool ProtosMessage::IsCorrect(QString& errorMsg) const\r\n{\r\n\tQString arg1(\"%1\"), arg2(\"%1\"), arg3(\"%1\"), arg4(\"%1\");\r\n\tuchar wantedDlc = 0;\r\n\terrorMsg = \"\";\r\n\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MCMD:\t\t\r\n\tcase SCMD:\t\r\n\tcase MANS:\t\t\r\n\tcase SANS:\t\t\r\n\t\treturn true;\r\n\r\n\tcase MERR:\t\t\r\n\tcase SERR:\r\n\t\tif (Dlc >= 3)\r\n\t\t\treturn true;\r\n\t\targ1 = GetMsgType();\r\n\t\targ2.arg(Data[1], ToHexStr).toUpper();\r\n\t\targ3.arg(GetCmdId(), ToHexStr).toUpper();\r\n\t\targ4 = Dlc;\r\n\t\terrorMsg = QObject::tr(\"Got %1: 0x%2 for 0x%3 cmd with wrong DLC (wanted not less than 3, got %4)\").arg(arg1, arg2, arg3, arg4);\r\n\t\tbreak;\r\n\t\r\n\tcase PREQ:\r\n\tcase PERR:\r\n\t\tif (Dlc == 2)\r\n\t\t\treturn true;\r\n\t\terrorMsg = QObject::tr(\"Got %1 with wrong DLC (wanted 2, got %2) \").arg(GetMsgType(), Dlc);\r\n\t\tbreak;\r\n\t\r\n\tcase PANS:\t\t\r\n\tcase PSET:\r\n\t\twantedDlc = GetParamFieldLength() + 2;\r\n\t\tif (wantedDlc == Dlc)\r\n\t\t\treturn true;\r\n\t\t\r\n\t\terrorMsg = QObject::tr(\"Got %1 with DLC not corresponding MsgType (wanted %2, got %3) \").arg(GetMsgType(), wantedDlc, Dlc);\t\t\t\t\r\n\t\tbreak;\r\n\t\r\n\tdefault:\r\n\t\terrorMsg = QObject::tr(\"Got unknown message type (0x%1) \").arg(MsgType, ToHexStr);\t\t\t\t\r\n\t}\r\n\t\r\n\terrorMsg.append(ToString());\r\n\treturn false;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetCanIdFields(ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tif (msgType != NONE) MsgType = msgType;\r\n\tif (senderAddr) SenderAddr = senderAddr;\r\n\tif (destAddr)\tDestAddr = destAddr;\r\n\t\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamField(ProtosMessage::ParamFields field, uchar paramId, ProtosMessage::MsgTypes msgType, QVariant fieldValue, uchar destAddr, uchar senderAddr)\r\n{\r\n\tif (msgType == MsgTypes::MCMD || msgType == MsgTypes::MANS || msgType == MsgTypes::MERR ||\r\n\t\tmsgType == MsgTypes::SCMD || msgType == MsgTypes::SANS || msgType == MsgTypes::SERR)\r\n\t\treturn *this;\r\n\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\r\n\tif (paramId)\r\n\t\tParamId\t= paramId;\r\n\tParamField\t= field;\r\n\t\r\n\tswitch (MsgType)\r\n\t{\r\n\tcase MsgTypes::PSET:\r\n\tcase MsgTypes::PANS:\r\n\t\tswitch (field)\r\n\t\t{\r\n\t\tcase ParamFields::CTRL_ACK:\r\n\t\tcase ParamFields::SET_ACK:\r\n\t\tcase ParamFields::UPDATE_BEFORE_READ:\r\n\t\t\tDlc = 3;\r\n\t\t\tParamFieldType = ParamFieldTypes::CHAR;\r\n\t\t\tif (fieldValue != QVariant()) \r\n\t\t\t\tCharField = fieldValue.toInt() & 0xff;\t\t\t\r\n\t\t\tbreak;\r\n\t\t\r\n\t\tcase ParamFields::CTRL_RATE:\r\n\t\tcase ParamFields::SEND_RATE:\r\n\t\tcase ParamFields::UPDATE_RATE:\t\t\r\n\t\t\tDlc = 4;\r\n\t\t\tParamFieldType = ParamFieldTypes::SHORT;\r\n\t\t\tif (fieldValue != QVariant())\t\r\n\t\t\t\tShortField = fieldValue.toInt() & 0xffff;\t\t\t\r\n\t\t\tbreak;\r\n\t\t\r\n\t\tcase ParamFields::MULT:\r\n\t\tcase ParamFields::OFFSET:\r\n\t\t\tDlc = 6;\r\n\t\t\tParamFieldType = ParamFieldTypes::FLOAT;\r\n\t\t\tif (fieldValue != QVariant())\r\n\t\t\t\tFloatField = fieldValue.toFloat();\r\n\t\t\tbreak;\r\n\r\n\t\t\t// all other param fields are read only\r\n\t\t}\r\n\t\tbreak;\r\n\t\r\n\tcase MsgTypes::PREQ:\r\n\t\tDlc = 2;\r\n\t\tswitch (field)\r\n\t\t{\r\n\t\tcase ParamFields::CTRL_ACK:\r\n\t\tcase ParamFields::ID:\r\n\t\tcase ParamFields::READ_ONLY:\r\n\t\tcase ParamFields::SET_ACK:\r\n\t\tcase ParamFields::TYPE:\r\n\t\tcase ParamFields::UPDATE_BEFORE_READ:\t\t\t\r\n\t\t\tParamFieldType = ParamFieldTypes::CHAR;\t\t\t\r\n\t\t\tbreak;\r\n\t\t\r\n\t\tcase ParamFields::CTRL_RATE:\r\n\t\tcase ParamFields::CTRL_TIME:\r\n\t\tcase ParamFields::SEND_RATE:\r\n\t\tcase ParamFields::SEND_TIME:\r\n\t\tcase ParamFields::UPDATE_RATE:\r\n\t\tcase ParamFields::UPDATE_TIME:\t\t\t\t\t\r\n\t\t\tParamFieldType = ParamFieldTypes::SHORT;\r\n\t\t\tbreak;\t\r\n\t\t\r\n\t\tcase ParamFields::MULT:\r\n\t\tcase ParamFields::OFFSET:\r\n\t\t\tParamFieldType = ParamFieldTypes::FLOAT;\r\n\t\t\tbreak;\t\t\r\n\t\t}\r\n\t\tbreak;\r\n\t\r\n\tcase MsgTypes::PERR:\r\n\t\tDlc = 2;\r\n\t\tif (fieldValue != QVariant())\r\n\t\t\tData[1] = fieldValue.toInt() & 0xff;\r\n\t\tbreak;\r\n\t}\t\r\n\t\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamValue(char charValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\t\r\n\tDlc = 3;\r\n\tif (paramId)\r\n\t\tParamId = paramId;\r\n\tParamField = ParamFields::VALUE;\r\n\tParamFieldType = ParamFieldTypes::CHAR;\r\n\tCharField = charValue;\t\r\n\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamValue(short shortValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\t\r\n\tDlc\t= 4;\r\n\tif (paramId)\r\n\t\tParamId = paramId;\r\n\tParamField = ParamFields::VALUE;\r\n\tParamFieldType = ParamFieldTypes::SHORT;\r\n\tShortField = shortValue;\t\r\n\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamValue(int intValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\r\n\tDlc\t= 6;\t\r\n\tif (paramId)\r\n\t\tParamId = paramId;\r\n\tParamField = ParamFields::VALUE;\r\n\tParamFieldType = ParamFieldTypes::LONG;\r\n\tLongField = intValue;\t\r\n\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamValue(float floatValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\r\n\tDlc\t= 6;\r\n\tif (paramId)\r\n\t\tParamId = paramId;\r\n\tParamField = ParamFields::VALUE;\r\n\tParamFieldType = ParamFieldTypes::FLOAT;\r\n\tFloatField = floatValue;\t\r\n\r\n\treturn *this;\r\n}\r\n\r\nProtosMessage& ProtosMessage::SetParamValue(const QString& stringValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)\r\n{\r\n\tSetCanIdFields(msgType, destAddr, senderAddr);\r\n\tDlc\t= stringValue.size() > 6 ? 6 : stringValue.size() + 2;\t\r\n\tif (paramId)\r\n\t\tParamId = paramId;\r\n\tParamField = ParamFields::VALUE;\r\n\tParamFieldType = ParamFieldTypes::STRING;\r\n\r\n\tint len = Dlc - 2;\r\n\tfor (int i = 0; i < len; i++)\r\n\t\tData[i + 2] = stringValue.at(i).toLatin1();\r\n\r\n\treturn *this;\r\n}\r\n\r\nQByteArray ProtosMessage::ToByteArray() const\r\n{\r\n\tQByteArray byteArray(IdLng + Dlc, 0);\r\n\tfor (int i = 0; i < 4; i++)\r\n\t\tbyteArray[i] = IdBytes[i];\t\r\n\tfor (int i = 0; i < Dlc; i++)\r\n\t\tbyteArray[IdLng + i] = Data[i];\r\n\treturn byteArray;\r\n}\r\n\r\nQString ProtosMessage::ToString() const\r\n{\r\n\tQString st(QString(\"%1%2%3%4.%5.\").arg(IdBytes[3], ToHexStr).arg(IdBytes[2], ToHexStr).arg(IdBytes[1], ToHexStr).arg(IdBytes[0], ToHexStr).arg(Dlc));\r\n\tfor (int i = 0; i < Dlc; i++)\r\n\t\tst.append(QString(\"%1\").arg(Data[i], ToHexStr));\r\n\treturn st.toUpper();\r\n}\r\n\r\nuchar& ProtosMessage::operator[](const uchar& index)\r\n{\r\n\tif (index < IdLng)\r\n\t\treturn IdBytes[index];\r\n\telse if (index < IdLng + 8)\r\n\t\treturn Data[index - IdLng];\r\n\telse\r\n\t\treturn IdBytes[0];\r\n}\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Monitor/protos_message.cpp	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ Monitor/protos_message.cpp	(date 1666623617320)
+@@ -389,7 +389,6 @@
+ 	if (msgType != NONE) MsgType = msgType;
+ 	if (senderAddr) SenderAddr = senderAddr;
+ 	if (destAddr)	DestAddr = destAddr;
+-	
+ 	return *this;
+ }
+ 
+@@ -435,7 +434,6 @@
+ 			if (fieldValue != QVariant())
+ 				FloatField = fieldValue.toFloat();
+ 			break;
+-
+ 			// all other param fields are read only
+ 		}
+ 		break;
+Index: DB_Driver/PSQL_Driver.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- DB_Driver/PSQL_Driver.cpp	(date 1667931738133)
++++ DB_Driver/PSQL_Driver.cpp	(date 1667931738133)
+@@ -0,0 +1,69 @@
++//
++// Created by AlexKDR on 23.10.2022.
++//
++
++#include "PSQL_Driver.h"
++#include "QSqlQuery"
++#include "QSqlError"
++
++PSQL_Driver::PSQL_Driver(QJsonObject& conf)
++        :config(conf)
++{
++    setConnection();
++}
++
++bool PSQL_Driver::setConnection() {
++    bool result;
++    db = QSqlDatabase::addDatabase("QPSQL");
++    configUpdate();
++    db.setHostName(host);
++    db.setDatabaseName(dbName);
++    db.setUserName(userName);
++    db.setPassword(password);
++    db.setPort(port.toInt());
++    result = db.open();
++    hasConnection = result;
++    qDebug()<<"Connected to DB? - " << result;
++    bool check = false;
++    check = createTable("FirstTable");
++    qDebug()<<"Is table created? - " << check;
++
++    return result;
++}
++
++bool PSQL_Driver::createTable(const QString& tableName){
++    QSqlQuery query;
++    if(!query.exec("CREATE TABLE accounts("
++                   "user_id serial PRIMARY KEY,"
++                   "username VARCHAR ( 50 ) UNIQUE NOT NULL,"
++                   "password VARCHAR ( 50 ) NOT NULL,"
++                   "email VARCHAR ( 255 ) UNIQUE NOT NULL"
++                   ");"))
++    {
++        qDebug() << QString("DataBase: error of create %1. Error: %2").arg(tableName).arg(query.lastError().text());
++        return false;
++    }else
++        return true;
++}
++
++bool PSQL_Driver::hasTable(const QString& tableName){
++
++}
++
++bool PSQL_Driver::isConnected() const {
++    return db.isOpen();
++}
++
++void PSQL_Driver::writeParam(ParamItem) {
++
++}
++
++void PSQL_Driver::configUpdate() {
++    auto confObject = config.value("DBConfObject");
++    host = confObject["HostName"].toString();
++    dbName = confObject["DatabaseName"].toString();
++    userName = confObject["UserName"].toString();
++    password = confObject["Password"].toString();
++    port = confObject["Port"].toString();
++    autoConnect = confObject["autoconnect"].toBool();
++}
+Index: main_window.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>//\r\n// Created by AlexKDR on 22.10.2022.\r\n//\r\n\r\n#include \"main_window.h\"\r\n#include \"fixed_packet.h\"\r\n#include \"packet_utils.h\"\r\n#include <algorithm>\r\n#include <qapplication.h>\r\n#include <qaction.h>\r\n#include <qdockwidget.h>\r\n#include <qjsondocument.h>\r\n#include <qstackedwidget.h>\r\n#include <qstatusbar.h>\r\n#include <qboxlayout.h>\r\n#include <qbuttongroup.h>\r\n#include <qevent.h>\r\n#include <qjsonarray.h>\r\n#include <qicon.h>\r\n#include <qmenu.h>\r\n#include <qtcpsocket.h>\r\n#include <qtoolbar.h>\r\n#include <qtoolbutton.h>\r\n#include <QtWidgets/QDialogButtonBox>\r\n#include <QtGui/QRegExpValidator>\r\n#include \"qfiledialog.h\"\r\n\r\nSocketAdapter Socket;\r\n\r\nMainWindow::MainWindow(int argv, char** argc, QWidget *parent)\r\n        : QMainWindow(parent)\r\n        , CentralWin(new QWidget(parent))\r\n        , Toolbar(nullptr)\r\n        , Dlg(new ConnectionDialog(this, &Socket))\r\n        , statusLabel(new QLabel(\"Status: \", this))\r\n{\r\n    Toolbar = CreateToolbar();\r\n    auto* mainLayout = new QVBoxLayout();\r\n    mainLayout->setContentsMargins(0, 0, 0, 0);\r\n    statusLabel->setAlignment(Qt::AlignHCenter);\r\n    statusLabel->setMinimumSize(statusLabel->sizeHint());\r\n    statusBar()->addWidget(statusLabel);\r\n    CentralWin->setLayout(mainLayout);\r\n    setCentralWidget(CentralWin);\r\n    Socket.AddTxMsgHandler([this](const ProtosMessage& txMsg) { txMsgHandler(txMsg);});\r\n\r\n    if (!Socket.Connect(\"127.0.0.5\", 3699, 1000)){\r\n        statusLabel->setText(tr(\"Cant connect to Server\"));\r\n    }\r\n    else{\r\n        statusLabel->setText(tr(\"Connected to Server\"));\r\n    }\r\n}\r\n\r\nQToolBar* MainWindow::CreateToolbar()\r\n{\r\n    QToolBar* toolbar = addToolBar(QString());\r\n    toolbar->setMovable(false);\r\n    toolbar->setStyleSheet(\"QToolBar { background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\\ stop: 0 #f6f7fa, stop: 1 #dadbde); }\");\r\n\r\n    auto socketConnect = toolbar->addAction(QString(\"Connect Server\"));\r\n    socketConnect->setObjectName(\"ServerConnect\");\r\n    socketConnect->setCheckable(true);\r\n    socketConnect->setToolTip(QStringLiteral(\"Подключиться/Отключиться к серверу\"));\r\n    connect(socketConnect, &QAction::triggered, [this](bool checked)\r\n    {\r\n        auto ConnDialog = new ConnectionDialog(this, &Socket);\r\n        UpdatePortButton(ConnDialog->exec() != 0);\r\n        delete ConnDialog;\r\n    });\r\n    toolbar->addSeparator();\r\n    auto loadDevice = toolbar->addAction(QIcon(), QString(\"Add Device\"));\r\n    loadDevice->setObjectName(\"AddDevice\");\r\n    loadDevice->setCheckable(false);\r\n    loadDevice->setToolTip(QStringLiteral(\"Добавить девайс\"));\r\n    connect(loadDevice, &QAction::triggered, [this](bool checked)\r\n    {\r\n        openFile();\r\n    });\r\n\r\n//    toolbar->addSeparator();\r\n//    auto sendMSG = toolbar->addAction(QIcon(), QString(\"sendMSG\"));\r\n//    sendMSG->setObjectName(\"sendMSG\");\r\n//    sendMSG->setCheckable(false);\r\n//    sendMSG->setToolTip(QStringLiteral(\"Отправить сообщ\"));\r\n//    connect(sendMSG, &QAction::triggered, [this](bool checked)\r\n//    {\r\n//        sendMessage();\r\n//    });\r\n//    toolbar->addSeparator();\r\n//    auto getBlockOKMSG = toolbar->addAction(QIcon(), QString(\"getBlockOKMSG\"));\r\n//    getBlockOKMSG->setObjectName(\"getBlockOKMSG\");\r\n//    getBlockOKMSG->setCheckable(false);\r\n//    getBlockOKMSG->setToolTip(QStringLiteral(\"Получить блок ОК\"));\r\n//    connect(getBlockOKMSG, &QAction::triggered, [this, &blockNum](bool checked)\r\n//    {\r\n//        getMessage();\r\n//    });\r\n//    toolbar->addSeparator();\r\n\r\n    auto* expander = new QWidget(toolbar);\r\n    expander->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);\r\n    toolbar->addWidget(expander);\r\n\r\n    auto exit = toolbar->addAction( QString(\"Exit\"));\r\n    exit->setToolTip(QStringLiteral(\"Закрыть приложение\"));\r\n    connect(exit, &QAction::triggered, [this](bool checked)\r\n    {\r\n        close();\r\n    });\r\n    return toolbar;\r\n}\r\n\r\nvoid MainWindow::UpdatePortButton(bool checked)\r\n{\r\n    auto btn = Toolbar->findChild<QAction*>(\"ServerConnect\");\r\n    btn->setText(checked ? \"Connected\" : \"Disconnected\");\r\n//    btn->setIcon(QIcon(checked ? \":/plugin\" : \":/plugout_red\"));\r\n    btn->setChecked(checked);\r\n}\r\n\r\nvoid MainWindow::getError(const QString &error, uint uid) {\r\n    QDialog dlg(this);\r\n    dlg.setWindowTitle(error);\r\n    auto *layout = new QFormLayout();\r\n    auto errorLabel = new QLabel(error, &dlg);\r\n    auto questionLabel = new QLabel((QStringLiteral(\"Finish device FW with UID: %1\").arg(uid,8,16)), &dlg);\r\n    auto *btn_box = new QDialogButtonBox(&dlg);\r\n    btn_box->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);\r\n    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);\r\n    connect(btn_box, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);\r\n\r\n    errorLabel->setAlignment(Qt::AlignHCenter);\r\n    errorLabel->setMinimumSize(statusLabel->sizeHint());\r\n    layout->addRow(errorLabel);\r\n    layout->addRow(questionLabel);\r\n    layout->addWidget(btn_box);\r\n\r\n    dlg.setLayout(layout);\r\n}\r\n\r\nvoid MainWindow::openFile() {\r\n    QDialog dlg(this);\r\n    dlg.setWindowTitle(tr(\"AddDevice\"));\r\n    auto *uid = new QLineEdit(\"FFFFFF\", &dlg);\r\n    auto *addr = new QLineEdit(\"FF\", &dlg);\r\n\r\n    auto *btn_box = new QDialogButtonBox(&dlg);\r\n    btn_box->setStandardButtons(QDialogButtonBox::Ok);\r\n    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);\r\n\r\n    auto *layout = new QFormLayout();\r\n    layout->addRow(tr(\"UID: \"), uid);\r\n    layout->addRow(tr(\"ADDR: \"), addr);\r\n    layout->addWidget(btn_box);\r\n\r\n    dlg.setLayout(layout);\r\n    if(dlg.exec() == QDialog::Accepted) {\r\n        uint32_t uid24 = uid->text().toUInt(nullptr, 16);\r\n        uint8_t addr8 = addr->text().toShort(nullptr, 16);\r\n        QString fileName = QFileDialog::getOpenFileName(this,\r\n                                                        tr(\"Open Bin\"), \"/home\", tr(\"Bin Files (*.bin)\"));\r\n//            QString fileName = \"D:\\\\u\\\\sa_pico_can.bin\";\r\n        QFile file(fileName);\r\n        if (file.open(QIODevice::ReadWrite))\r\n        {\r\n            qDebug() << (tr(\"UID: %1 ADDR: %2 \").arg(uid24).arg(addr8));\r\n            statusLabel->setText(tr(\"Device loaded UID: %1 ADDR: %2 \").arg(uid24, 8, 16).arg(addr8, 2,16));\r\n        }\r\n    } else{\r\n        statusLabel->setText(tr(\"Aborted adding device\"));\r\n    }\r\n}\r\n\r\nvoid MainWindow::txMsgHandler(const ProtosMessage &txMsg) {\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- main_window.cpp	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ main_window.cpp	(date 1667830777190)
+@@ -3,8 +3,6 @@
+ //
+ 
+ #include "main_window.h"
+-#include "fixed_packet.h"
+-#include "packet_utils.h"
+ #include <algorithm>
+ #include <qapplication.h>
+ #include <qaction.h>
+@@ -23,155 +21,267 @@
+ #include <qtoolbutton.h>
+ #include <QtWidgets/QDialogButtonBox>
+ #include <QtGui/QRegExpValidator>
++#include <QtWidgets/QRadioButton>
++#include <QtWidgets/QCheckBox>
++#include <QtWidgets/QMessageBox>
+ #include "qfiledialog.h"
+-
+-SocketAdapter Socket;
++#include "functional"
+ 
+ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
+         : QMainWindow(parent)
+         , CentralWin(new QWidget(parent))
+         , Toolbar(nullptr)
+-        , Dlg(new ConnectionDialog(this, &Socket))
+-        , statusLabel(new QLabel("Status: ", this))
++        , serverLabel(new QLabel("Server not connected", this))
++        , dbLabel(new QLabel("DB not connected", this))
++        , TableView(new QTableView(this))
++        , logWidget(new QListWidget(this))
+ {
++    openFileLoadConfig();
++    paramService = new ParamService(ConfJson, [this]() {paramServiceModel->update();});
++    settingsDlg = new Settings_dlg(&Socket, paramService->getDbDriver(), ConfJson, this);
++    paramServiceModel = new ParamService_model(paramService->getPtrList(), this);
++
+     Toolbar = CreateToolbar();
+     auto* mainLayout = new QVBoxLayout();
+-    mainLayout->setContentsMargins(0, 0, 0, 0);
+-    statusLabel->setAlignment(Qt::AlignHCenter);
+-    statusLabel->setMinimumSize(statusLabel->sizeHint());
+-    statusBar()->addWidget(statusLabel);
++    mainLayout->setContentsMargins(10, 10, 10, 10);
+     CentralWin->setLayout(mainLayout);
+     setCentralWidget(CentralWin);
++    makeStatusLabel();
++    mainLayout->addWidget(makeParamTable());
++    mainLayout->addWidget(makeParamSetGroupBox());
++    mainLayout->addWidget(logWidgetConfig());
++
+     Socket.AddTxMsgHandler([this](const ProtosMessage& txMsg) { txMsgHandler(txMsg);});
++    connect(TableView, SIGNAL(clicked(const QModelIndex&)),this, SLOT(OnClickedTableCell(const QModelIndex&)));
+ 
+-    if (!Socket.Connect("127.0.0.5", 3699, 1000)){
+-        statusLabel->setText(tr("Cant connect to Server"));
+-    }
+-    else{
+-        statusLabel->setText(tr("Connected to Server"));
++    checkServicesConnection();
++//    updateTimerID = startTimer(300);
++}
++
++QGroupBox* MainWindow::makeParamSetGroupBox(){
++    auto* addParamGroupBox = new QGroupBox(tr("Some settings here"), this);
++    addParamGroupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
++    auto* searchGroupBoxLayout = new QHBoxLayout(addParamGroupBox);
++    addParamGroupBox->setLayout(searchGroupBoxLayout);
++    auto* makeEvent = new QPushButton("Make Event");
++    connect(makeEvent, &QPushButton::clicked, [this]()
++    {
++        qDebug()<<"clicked";
++    });
++    auto* addParamBtn = new QPushButton("Add Param");
++    connect(addParamBtn, &QPushButton::clicked, [this]()
++    {
++        addParam();
++    });
++
++    auto* logToFile = new QCheckBox("Log to file");
++    connect(logToFile, &QCheckBox::toggled, [this]()
++    {
++        logToFileFlag = !logToFileFlag;
++    });
++
++    makeEvent->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
++    makeEvent->setEnabled(true);
++    addParamBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
++    addParamBtn->setEnabled(true);
++    searchGroupBoxLayout->addWidget(addParamBtn);
++    searchGroupBoxLayout->addWidget(makeEvent);
++    searchGroupBoxLayout->addWidget(logToFile);
++    return addParamGroupBox;
++}
++
++void MainWindow::makeStatusLabel(){
++    serverLabel->setAlignment(Qt::AlignHCenter);
++    serverLabel->setMinimumSize(serverLabel->sizeHint());
++    dbLabel->setAlignment(Qt::AlignHCenter);
++    dbLabel->setMinimumSize(dbLabel->sizeHint());
++    statusBar()->addWidget(serverLabel);
++    statusBar()->addWidget(dbLabel);
++}
++
++QTableView* MainWindow::makeParamTable(){
++    TableView->setModel(paramServiceModel);
++    TableView->setEditTriggers(QAbstractItemView::AllEditTriggers);
++    TableView->setContextMenuPolicy(Qt::CustomContextMenu);
++    TableView->setColumnWidth(0, 20);
++    TableView->setColumnWidth(1, 50);
++    TableView->setColumnWidth(2, 80);
++    TableView->setColumnWidth(3, 60);
++    TableView->setColumnWidth(4, 60);
++    TableView->setColumnWidth(5, 110);
++    TableView->setColumnWidth(6, 80);
++    TableView->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
++    return TableView;
++}
++
++void MainWindow::saveAll(){
++    paramService->saveParams();
++    QJsonDocument doc;
++    doc.setObject(ConfJson);
++    if(!configFile->isOpen()) {
++        configFile = new QFile(QCoreApplication::applicationDirPath() + "/../saved_params.json");
++        configFile->open(QIODevice::ReadWrite);
+     }
++    configFile->resize(0);
++    configFile->write(doc.toJson(QJsonDocument::Indented));
++    configFile->close();
+ }
+ 
+ QToolBar* MainWindow::CreateToolbar()
+ {
+     QToolBar* toolbar = addToolBar(QString());
+     toolbar->setMovable(false);
+-    toolbar->setStyleSheet("QToolBar { background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\ stop: 0 #f6f7fa, stop: 1 #dadbde); }");
+ 
+-    auto socketConnect = toolbar->addAction(QString("Connect Server"));
+-    socketConnect->setObjectName("ServerConnect");
+-    socketConnect->setCheckable(true);
+-    socketConnect->setToolTip(QStringLiteral("Подключиться/Отключиться к серверу"));
+-    connect(socketConnect, &QAction::triggered, [this](bool checked)
+-    {
+-        auto ConnDialog = new ConnectionDialog(this, &Socket);
+-        UpdatePortButton(ConnDialog->exec() != 0);
+-        delete ConnDialog;
+-    });
+-    toolbar->addSeparator();
+-    auto loadDevice = toolbar->addAction(QIcon(), QString("Add Device"));
+-    loadDevice->setObjectName("AddDevice");
+-    loadDevice->setCheckable(false);
+-    loadDevice->setToolTip(QStringLiteral("Добавить девайс"));
+-    connect(loadDevice, &QAction::triggered, [this](bool checked)
++    QFile styleFile(QCoreApplication::applicationDirPath() + "/../qss/toolbar.css");
++    styleFile.open(QIODevice::ReadOnly);
++    toolbar->setStyleSheet(styleFile.readAll());
++    styleFile.close();
++
++    auto settingsWindow = toolbar->addAction(QString("Settings"));
++    settingsWindow->setObjectName("Settings");
++    settingsWindow->setToolTip(QString("Open settings window"));
++    connect(settingsWindow, &QAction::triggered, [this](bool checked)
+     {
+-        openFile();
++        settingsDlg->show();
++        settingsDlg->raise();
++        settingsDlg->setAttribute(Qt::WA_DeleteOnClose);
++        settingsDlg->activateWindow();
+     });
+-
+-//    toolbar->addSeparator();
+-//    auto sendMSG = toolbar->addAction(QIcon(), QString("sendMSG"));
+-//    sendMSG->setObjectName("sendMSG");
+-//    sendMSG->setCheckable(false);
+-//    sendMSG->setToolTip(QStringLiteral("Отправить сообщ"));
+-//    connect(sendMSG, &QAction::triggered, [this](bool checked)
+-//    {
+-//        sendMessage();
+-//    });
+-//    toolbar->addSeparator();
+-//    auto getBlockOKMSG = toolbar->addAction(QIcon(), QString("getBlockOKMSG"));
+-//    getBlockOKMSG->setObjectName("getBlockOKMSG");
+-//    getBlockOKMSG->setCheckable(false);
+-//    getBlockOKMSG->setToolTip(QStringLiteral("Получить блок ОК"));
+-//    connect(getBlockOKMSG, &QAction::triggered, [this, &blockNum](bool checked)
+-//    {
+-//        getMessage();
+-//    });
+-//    toolbar->addSeparator();
+ 
+     auto* expander = new QWidget(toolbar);
+     expander->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+     toolbar->addWidget(expander);
+ 
+-    auto exit = toolbar->addAction( QString("Exit"));
+-    exit->setToolTip(QStringLiteral("Закрыть приложение"));
++    auto exit = toolbar->addAction( QString("Save & Exit"));
++    exit->setToolTip(QString("Save all and close app"));
+     connect(exit, &QAction::triggered, [this](bool checked)
+     {
++        saveAll();
+         close();
+     });
++
+     return toolbar;
+ }
+ 
+-void MainWindow::UpdatePortButton(bool checked)
+-{
+-    auto btn = Toolbar->findChild<QAction*>("ServerConnect");
+-    btn->setText(checked ? "Connected" : "Disconnected");
+-//    btn->setIcon(QIcon(checked ? ":/plugin" : ":/plugout_red"));
+-    btn->setChecked(checked);
+-}
+-
+-void MainWindow::getError(const QString &error, uint uid) {
++void MainWindow::addParam() {
+     QDialog dlg(this);
+-    dlg.setWindowTitle(error);
++    dlg.setWindowTitle("Add Param");
+     auto *layout = new QFormLayout();
+-    auto errorLabel = new QLabel(error, &dlg);
+-    auto questionLabel = new QLabel((QStringLiteral("Finish device FW with UID: %1").arg(uid,8,16)), &dlg);
++    auto label = new QLabel("Add Param", &dlg);
++    auto ID = new QLineEdit("");
++    auto Note = new QLineEdit("");
++    auto DB = new QCheckBox("Write to DB");
+     auto *btn_box = new QDialogButtonBox(&dlg);
+-    btn_box->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
++    btn_box->setStandardButtons(QDialogButtonBox::Ok);
+     connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+-    connect(btn_box, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+-
+-    errorLabel->setAlignment(Qt::AlignHCenter);
+-    errorLabel->setMinimumSize(statusLabel->sizeHint());
+-    layout->addRow(errorLabel);
+-    layout->addRow(questionLabel);
++    label->setAlignment(Qt::AlignHCenter);
++    layout->addRow(label);
++    layout->addRow(tr("ID: "),ID);
++    layout->addRow(tr("Note: "),Note);
++    layout->addRow(DB);
+     layout->addWidget(btn_box);
+-
+     dlg.setLayout(layout);
++    if(dlg.exec() == QDialog::Accepted) {
++        int paramID = ID->text().toInt();
++        if(paramID <= 0 || paramID > 255){
++            QMessageBox::information(&dlg, "Wrong ID", "ID should be (uint8) > 0 && <= 255");
++            return;
++        }
++        QString paramNote = Note->text();
++        bool paramInserted = paramService->addParam(paramID, paramNote, DB->isChecked());
++        if(paramInserted) paramServiceModel->addRow();
++    }else
++        serverLabel->setText(tr("Aborted adding param"));
++}
++
++void MainWindow::openFileLoadConfig() {
++    configFile = new QFile(QCoreApplication::applicationDirPath() + "/../saved_params.json");
++    configFile->open(QIODevice::ReadWrite);
++    QByteArray saveData = configFile->readAll();
++    QJsonDocument jsonDocument(QJsonDocument::fromJson(saveData));
++    ConfJson = jsonDocument.object();
+ }
+ 
+-void MainWindow::openFile() {
+-    QDialog dlg(this);
+-    dlg.setWindowTitle(tr("AddDevice"));
+-    auto *uid = new QLineEdit("FFFFFF", &dlg);
+-    auto *addr = new QLineEdit("FF", &dlg);
+-
+-    auto *btn_box = new QDialogButtonBox(&dlg);
+-    btn_box->setStandardButtons(QDialogButtonBox::Ok);
+-    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+-
+-    auto *layout = new QFormLayout();
+-    layout->addRow(tr("UID: "), uid);
+-    layout->addRow(tr("ADDR: "), addr);
+-    layout->addWidget(btn_box);
+-
+-    dlg.setLayout(layout);
+-    if(dlg.exec() == QDialog::Accepted) {
+-        uint32_t uid24 = uid->text().toUInt(nullptr, 16);
+-        uint8_t addr8 = addr->text().toShort(nullptr, 16);
+-        QString fileName = QFileDialog::getOpenFileName(this,
+-                                                        tr("Open Bin"), "/home", tr("Bin Files (*.bin)"));
+-//            QString fileName = "D:\\u\\sa_pico_can.bin";
+-        QFile file(fileName);
+-        if (file.open(QIODevice::ReadWrite))
+-        {
+-            qDebug() << (tr("UID: %1 ADDR: %2 ").arg(uid24).arg(addr8));
+-            statusLabel->setText(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
+-        }
++void MainWindow::txMsgHandler(const ProtosMessage &txMsg) {
++    paramService->ParseBootMsg(txMsg);
++}
++
++void MainWindow::timerEvent(QTimerEvent *event){
++    paramServiceModel->update();
++}
++
++void MainWindow::OnClickedTableCell(const QModelIndex& index) {
++    if(paramServiceModel->isDeleteCellClicked(index)){
++        int deleteID = paramServiceModel->getParamID(index);
++        QDialog dlg(this);
++        dlg.setWindowTitle("Remove Param");
++        auto *layout = new QFormLayout();
++        auto label = new QLabel(QString("Remove Param: ") + QString("%1?").arg(deleteID,2,16,QChar('0')).toUpper().prepend("0x"), &dlg);
++        auto *btn_box = new QDialogButtonBox(&dlg);
++        btn_box->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::No);
++        connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
++        connect(btn_box, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
++        label->setAlignment(Qt::AlignHCenter);
++        layout->addRow(label);
++        layout->addWidget(btn_box);
++        dlg.setLayout(layout);
++        auto exitCode = dlg.exec();
++        if(exitCode == QDialog::Accepted) {
++            bool paramInserted = paramService->removeParam(deleteID);
++            if(paramInserted) paramServiceModel->removeRow(index);
++        }
++    }
++}
++
++void MainWindow::closeEvent(QCloseEvent *event)
++{
++    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Protos Config",
++                                                                tr("Save params and config?\n"),
++                                                                QMessageBox::No | QMessageBox::Save,
++                                                                QMessageBox::Save);
++    if (resBtn == QMessageBox::Save)
++        saveAll();
++    else
++        close();
++}
++
++void MainWindow::checkServicesConnection(){
++    if (Socket.IsConnected()){
++        serverLabel->setText(tr("Connected to Server"));
++        serverLabel->setStyleSheet("color : green");
++        AddToLog("Connected to Server");
++    }
++    else {
++        serverLabel->setText(tr("Cant connect to Server"));
++        serverLabel->setStyleSheet("color : red");
++        AddToLog("Cant connect to Server", true);
++    }
++    if(paramService->getDbDriver().isConnected()){
++        dbLabel->setText(tr("Connected to DB"));
++        dbLabel->setStyleSheet("color : green");
++        AddToLog("Connected to DB");
+     } else{
+-        statusLabel->setText(tr("Aborted adding device"));
++        dbLabel->setText(tr("Cant connect to DB"));
++        dbLabel->setStyleSheet("color : red");
++        AddToLog("Cant connect to DB", true);
++
+     }
+ }
+ 
+-void MainWindow::txMsgHandler(const ProtosMessage &txMsg) {
++QListWidget* MainWindow::logWidgetConfig(){
++    QFile styleFile(QCoreApplication::applicationDirPath() + "/../qss/logWidget.css");
++    styleFile.open(QIODevice::ReadOnly);
++    logWidget->setStyleSheet(styleFile.readAll());
++    styleFile.close();
++//    logWidget->setMinimumHeight(5);
++    logWidget->setFixedHeight(80);
++    logWidget->setAlternatingRowColors(true);
++    return logWidget;
++}
+ 
+-}
++void MainWindow::AddToLog(const QString& string, bool isError)
++{
++    logWidget->addItem(QTime::currentTime().toString("HH:mm:ss:zzz").append(" : ").append(string));
++    if (isError)
++        logWidget->item(logWidget->count() - 1)->setForeground(QBrush(QColor("red")));
++}
+\ No newline at end of file
+Index: Settings/DBConfigWidget.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/DBConfigWidget.cpp	(date 1667822865085)
++++ Settings/DBConfigWidget.cpp	(date 1667822865085)
+@@ -0,0 +1,58 @@
++//
++// Created by outlaw on 02.11.2022.
++//
++
++#include "DBConfigWidget.h"
++
++DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDriver)
++        : HostName(new QLineEdit(this))
++        , DatabaseName(new QLineEdit(this))
++        , UserName(new QLineEdit(this))
++        , Password(new QLineEdit(this))
++        , Port(new QLineEdit(this))
++        , autoconnect(new QCheckBox(this))
++        , connectBtn(new QPushButton(tr("Save+Connect"), this))
++        , statusLabel(new QLabel("", this))
++        , savedConf(JsonConf)
++        , dbDriver(databaseDriver)
++{
++    Set();
++    auto *layout = new QFormLayout();
++    layout->setContentsMargins(30, 30, 30, 30);
++    auto label = new QLabel("DataBase connection", this);
++    label->setAlignment(Qt::AlignTop);
++    layout->addRow(label);
++    layout->addRow(QString("Host Name"), HostName);
++    layout->addRow(QString("Database Name"),  DatabaseName);
++    Password->setEchoMode(QLineEdit::Password);
++    layout->addRow(QString("User Name"), UserName);
++    layout->addRow(QString("Password"),  Password);
++    layout->addRow(QString("Port"), Port);
++    layout->addRow(QString("Auto connect"), autoconnect);
++    layout->addWidget(connectBtn);
++    connect(connectBtn, &QPushButton::clicked, [this](){
++        dbDriver.setConnection();
++    });
++    this->setLayout(layout);
++}
++
++void DBConfigWidget::Save() {
++    QJsonObject confObj;
++    confObj["HostName"] = HostName->text();
++    confObj["DatabaseName"] = DatabaseName->text();
++    confObj["UserName"] = UserName->text();
++    confObj["Password"] = Password->text();
++    confObj["Port"] = Port->text();
++    confObj["autoconnect"] = autoconnect->isChecked();
++    savedConf["DBConfObject"] = confObj;
++}
++
++void DBConfigWidget::Set() {
++    auto confObject = savedConf.value("DBConfObject");
++    HostName->setText((confObject["HostName"].toString()));
++    DatabaseName->setText (confObject["DatabaseName"].toString());
++    UserName->setText(confObject["UserName"].toString());
++    Password->setText  (confObject["Password"].toString());
++    Port->setText(confObject["Port"].toString());
++    autoconnect->setChecked (confObject["autoconnect"].toBool());
++}
+\ No newline at end of file
+Index: TableModel/ParamService_model.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- TableModel/ParamService_model.cpp	(date 1667815736994)
++++ TableModel/ParamService_model.cpp	(date 1667815736994)
+@@ -0,0 +1,165 @@
++//
++// Created by outlaw on 24.10.2022.
++//
++
++#include <Monitor/protos_message.h>
++#include <QtWidgets/QMessageBox>
++#include "ParamService_model.h"
++
++const QString ParamService_model::ColumnHeaders[ParamService_model::ColCnt] = {
++        tr("DB"), tr("Day"), tr("Time"), tr("ID"), tr("VALUE"), tr("NOTES")
++};
++
++ParamService_model::ParamService_model(QList<ParamItem*>& inList, QObject* parent):
++    QAbstractTableModel(parent)
++    ,paramPtrList(inList)
++{
++}
++
++int ParamService_model::columnCount(const QModelIndex &parent) const {
++    return ColCnt;
++}
++
++bool ParamService_model::setData(const QModelIndex &index, const QVariant &value, int role)
++{
++    if (!index.isValid())
++        return false;
++    auto* data = paramPtrList[index.row()];
++    switch (index.column()) {
++        case PARAM_ID:
++            if(role == Qt::EditRole){
++                if(value.canConvert(QVariant::String) && value.toString().size()){
++                    data->setAltName(value.toString());
++                    return true;
++                }
++            }
++            break;
++        case DB_Active:
++            if (role == Qt::CheckStateRole){
++                data->setWriteToDb(value == Qt::Checked);
++                data->setState(value == Qt::Checked ? ParamItem::States::InDB : ParamItem::States::No_DB);
++                update();
++                return true;
++            }
++            break;
++        case NOTES:
++            if(role == Qt::EditRole){
++                if(value.canConvert(QVariant::String) && value.toString().size()){
++                  data->setNote(value.toString());
++                  return true;
++                }
++            }
++            break;
++    }
++    return false;
++}
++
++QVariant ParamService_model::data(const QModelIndex &index, int role) const {
++    if (index.column() < 0 || index.column() > ColCnt || index.row() < 0 || index.row() > paramPtrList.size())
++        return QVariant();
++    auto& data = paramPtrList[index.row()];
++    switch (role)
++    {
++        case Qt::BackgroundRole:
++            return GetDisplayBackgroundRole(index, data);
++        case Qt::DisplayRole:
++            return GetDisplayRoleData(index, data);
++        case Qt::TextAlignmentRole:
++            return Qt::AlignCenter;
++        case Qt::CheckStateRole:
++            if(index.column() == DB_Active)
++                return data->isWriteToDb() ? Qt::Checked : Qt::Unchecked;
++            else return QVariant();
++        default:
++            return QVariant();
++    }
++}
++
++QVariant ParamService_model::GetDisplayRoleData(const QModelIndex& index, ParamItem *data) const
++{
++    switch (index.column())
++    {
++        case Time_Day:
++            return data->getLastValueDay();
++        case Time_Time:
++            return data->getLastValueTime();
++        case PARAM_ID: {
++            QString value = QString("%1").arg(data->getId(), 4, 16, QChar('0')).toUpper().prepend("0x");
++            if (data->getAltName().length())
++                value = value.prepend(data->getAltName() + "(").append(")");
++            return value;
++        }
++        case VALUE:
++            return data->getValue().toString();
++        case NOTES:
++            return data->getNote();
++        case DELETE:
++            return QString("DELETE ME");
++    }
++    return QVariant();
++}
++
++QBrush ParamService_model::GetDisplayBackgroundRole(const QModelIndex& index, ParamItem* data) const
++{
++    switch (data->getState())
++    {
++        case ParamItem::InDB:
++            return QBrush(QColor("lightgreen"));
++        default:
++            return QBrush(QColor("white"));
++    }
++}
++
++Qt::ItemFlags ParamService_model::flags(const QModelIndex& index) const {
++    switch (index.column()) {
++        case DB_Active:
++            return Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable;
++            break;
++        case NOTES:
++        case PARAM_ID:
++            return Qt::ItemIsEditable | Qt::ItemIsEnabled;
++            break;
++        default:
++            break;
++    }
++    return Qt::NoItemFlags;
++}
++
++QVariant ParamService_model::headerData(int section, Qt::Orientation orientation, int role) const {
++    switch (role)
++    {
++        case Qt::DisplayRole:
++            if(orientation == Qt::Horizontal)
++                return section < ColCnt ? ColumnHeaders[section] : QVariant();
++            else
++                return section + 1;
++        default:
++            return QVariant();
++    }
++}
++
++int ParamService_model::rowCount(const QModelIndex &) const{
++    return paramPtrList.size();
++}
++
++void ParamService_model::addRow() {
++    beginInsertRows(QModelIndex(), paramPtrList.size(), paramPtrList.size());
++    endInsertRows();
++}
++
++void ParamService_model::removeRow(const QModelIndex &index) {
++    beginRemoveRows(QModelIndex(), index.row(), index.row());
++    endRemoveRows();
++}
++
++void ParamService_model::update() {
++    emit dataChanged(createIndex(0, 0), createIndex(0, ColCnt));
++}
++
++bool ParamService_model::isDeleteCellClicked(const QModelIndex& index) {
++    return index.column() == DELETE;
++}
++
++int ParamService_model::getParamID(const QModelIndex& index){
++    return paramPtrList[index.row()]->getId();
++}
+\ No newline at end of file
+Index: ParamService.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ParamService.cpp	(date 1667822263429)
++++ ParamService.cpp	(date 1667822263429)
+@@ -0,0 +1,109 @@
++//
++// Created by outlaw on 28.10.2022.
++//
++
++#include <Monitor/protos_message.h>
++
++#include <utility>
++#include <QtCore/QCoreApplication>
++#include <QtCore/QFile>
++#include "ParamService.h"
++
++void ParamService::ParseBootMsg(const ProtosMessage& msg) {
++    if ((msg.ProtocolType != ProtosMessage::PROTOS) || !msg.Dlc)
++        return;
++}
++
++QList<ParamItem*>& ParamService::getPtrList() {
++    return ptrList;
++}
++
++bool ParamService::addParam(uint incomeID, const QString &incomeNote, bool writeToDB) {
++    if(dataMap.contains(incomeID)) return false;
++    dataMap.insert(incomeID,ParamItem(incomeID, incomeNote, writeToDB));
++    setPtrListFromMap();
++    return true;
++}
++
++bool ParamService::removeParam(uint incomeID) {
++    if(!dataMap.contains(incomeID)) return false;
++    dataMap.remove(incomeID);
++    setPtrListFromMap();
++    return true;
++}
++
++ParamService::ParamService(QJsonObject& inJson, std::function<void()> func)
++    : updateTableViewFunc(std::move(func))
++    , qJsonObject(inJson)
++    , dbDriver(PSQL_Driver(inJson))
++{
++    loadParams();
++//    configureTimer(mSecWriteTimer);
++//    auto data = ParamItem(0x12);
++//    data.setValue("333");
++//    data.setNote("First Param");
++//    data.setWriteToDb(true);
++//    data.setLastValueTime(QDateTime::currentDateTime());
++//    data.setState(ParamItem::States::InDB);
++//
++//    auto data2 = ParamItem(0x14);
++//    data2.setValue("");
++//    data2.setNote("Second Param");
++//    data2.setWriteToDb(false);
++//    dataMap.insert(data.getId(),data);
++//    dataMap.insert(data2.getId(),data2);
++//    loadParams();
++//    setPtrListFromMap();
++}
++
++void ParamService::updateParamValue(uchar paramID, QString&& value) {
++    if(dataMap.contains(paramID))
++        dataMap[paramID].setValue(value);
++    updateTableViewFunc();
++}
++
++void ParamService::configureTimer(int timerValue) {
++    writeTimer = new QTimer();
++    connect(writeTimer, SIGNAL(timeout()), this, SLOT(writeTimerUpdate()));
++    writeTimer->start(mSecWriteTimer);
++}
++
++void ParamService::writeTimerUpdate() {
++    qDebug("dd");
++}
++
++inline void ParamService::setPtrListFromMap(){
++    ptrList.clear();
++    auto it = dataMap.begin();
++    auto end = dataMap.end();
++    while(it != end){
++        ptrList.append(&it.value());
++        it++;
++    }
++}
++
++void ParamService::saveParams() {
++    QJsonArray paramArr;
++    for(auto& p: dataMap)
++        paramArr.append(p.getJsonObject());
++    qJsonObject["Params"] = paramArr;
++}
++
++void ParamService::loadParams() {
++    QJsonArray paramArr = qJsonObject["Params"].toArray();
++    dataMap.clear();
++    for (const auto& param : paramArr)
++    {
++        QJsonObject loadParam = param.toObject();
++        if (param != QJsonObject())
++        {
++            ParamItem item(loadParam);
++            dataMap.insert(item.getId(), item);
++        }
++    }
++    setPtrListFromMap();
++}
++
++PSQL_Driver& ParamService::getDbDriver() {
++    return dbDriver;
++}
+Index: Settings/Settings_dlg.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/Settings_dlg.cpp	(date 1667821516636)
++++ Settings/Settings_dlg.cpp	(date 1667821516636)
+@@ -0,0 +1,31 @@
++//
++// Created by outlaw on 01.11.2022.
++//
++#include "Settings_dlg.h"
++
++
++Settings_dlg::Settings_dlg(SocketAdapter* socketAdapter, PSQL_Driver& databaseDriver, QJsonObject& cfg, QWidget *parent)
++    : QDialog(parent),
++      qJsonObject(cfg)
++{
++    setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
++    setWindowTitle(QString("Settings"));
++    auto* mainLayout = new QVBoxLayout(this);
++    tabWidget = new QTabWidget;
++    tabWidget->setTabShape(QTabWidget::Rounded);
++    tabWidget->setTabPosition(QTabWidget::North);
++    tabWidget->setMovable(true);
++    tabWidget->setTabBarAutoHide(true);
++    auto connectWidget = new ServerConnectWidget(socketAdapter, qJsonObject);
++    auto canWidget = new DBConfigWidget(qJsonObject, databaseDriver);
++    tabWidget->addTab(connectWidget, "Server");
++    tabWidget->addTab(canWidget, "DB");
++    auto *gridLayout = new QGridLayout;
++    gridLayout->addWidget(tabWidget);
++
++    auto* btnLayout = new QHBoxLayout();
++    btnLayout->setAlignment(Qt::AlignBottom);
++    mainLayout->addLayout(gridLayout);
++    mainLayout->addLayout(btnLayout);
++    this->setLayout(mainLayout);
++}
+Index: main_window.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>//\r\n// Created by AlexKDR on 22.10.2022.\r\n//\r\n#ifndef POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H\r\n#define POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H\r\n\r\n#include <qmainwindow.h>\r\n#include \"connection_dialog.h\"\r\n\r\nclass LogView;\r\nclass QTcpSocket;\r\n\r\nclass MainWindow : public QMainWindow\r\n{\r\nQ_OBJECT\r\npublic:\r\n    MainWindow(int argv, char** argc, QWidget *parent = 0);\r\n    //signals:\r\nprivate slots:\r\n    void getError(const QString& error, uint uid);\r\nprivate:\r\n    QToolBar* CreateToolbar();\r\n    void openFile();\r\n    void UpdatePortButton(bool checked);\r\n    LogView* logView;\r\n    QLabel* statusLabel;\r\n    QWidget* CentralWin;\r\n    QToolBar* Toolbar;\r\n    std::unique_ptr<ConnectionDialog> Dlg;\r\n    void txMsgHandler(const ProtosMessage &txMsg);\r\n};\r\n#endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- main_window.h	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ main_window.h	(date 1667830600803)
+@@ -5,28 +5,57 @@
+ #define POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H
+ 
+ #include <qmainwindow.h>
++#include <QtWidgets/QTableView>
++#include <TableModel/ParamService_model.h>
++#include <QtWidgets/QListWidget>
++#include <QtWidgets/QGroupBox>
++#include <QtCore/QFile>
+ #include "connection_dialog.h"
++#include "ParamItem.h"
++#include "ParamService.h"
++#include "Settings/Settings_dlg.h"
+ 
+-class LogView;
+ class QTcpSocket;
+ 
+ class MainWindow : public QMainWindow
+ {
+ Q_OBJECT
+ public:
+-    MainWindow(int argv, char** argc, QWidget *parent = 0);
++    MainWindow(int argv, char** argc, QWidget *parent = nullptr);
+     //signals:
+ private slots:
+-    void getError(const QString& error, uint uid);
++    void addParam();
++    void OnClickedTableCell(const QModelIndex &index);
++protected:
++    void timerEvent(QTimerEvent *event) override;
+ private:
++    void openFileLoadConfig();
++    void txMsgHandler(const ProtosMessage &txMsg);
++
++    QTableView* makeParamTable();
+     QToolBar* CreateToolbar();
+-    void openFile();
+-    void UpdatePortButton(bool checked);
+-    LogView* logView;
+-    QLabel* statusLabel;
++    void makeStatusLabel();
++    QGroupBox *makeParamSetGroupBox();
++    void closeEvent(QCloseEvent *event);
++    void saveAll();
++    QListWidget* logWidgetConfig();
++    void AddToLog(const QString &string, bool isError = false);
++
++    QLabel* serverLabel;
++    QLabel* dbLabel;
+     QWidget* CentralWin;
+     QToolBar* Toolbar;
+-    std::unique_ptr<ConnectionDialog> Dlg;
+-    void txMsgHandler(const ProtosMessage &txMsg);
++    QTableView *TableView;
++    ParamService_model* paramServiceModel;
++    Settings_dlg* settingsDlg;
++    ParamService* paramService;
++    SocketAdapter Socket;
++    int updateTimerID;
++    bool logToFileFlag;
++    QJsonObject ConfJson;
++    QFile* configFile;
++    QListWidget* logWidget;
++
++    void checkServicesConnection();
+ };
+-#endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H
++#endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H
+\ No newline at end of file
+Index: Settings/Settings_dlg.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/Settings_dlg.h	(date 1667821516636)
++++ Settings/Settings_dlg.h	(date 1667821516636)
+@@ -0,0 +1,34 @@
++//
++// Created by outlaw on 01.11.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_SETTINGS_DLG_H
++#define POTOSSERVER_PARAMSERVICE_SETTINGS_DLG_H
++
++#include <QtWidgets/QDialog>
++#include "QComboBox"
++#include "QHBoxLayout"
++#include "ServerConnectWidget.h"
++#include "DBConfigWidget.h"
++#include <QtWidgets/QPushButton>
++#include "QButtonGroup"
++#include <QGroupBox>
++#include <socket_adapter.h>
++#include <QtWidgets/QDialogButtonBox>
++#include <QtWidgets/QListWidget>
++#include <QtWidgets/QSplitter>
++#include <DB_Driver/PSQL_Driver.h>
++#include "QJsonObject"
++
++class Settings_dlg : public QDialog
++{
++    Q_OBJECT
++public:
++    Settings_dlg(SocketAdapter* socketAdapter, PSQL_Driver& databaseDriver, QJsonObject&, QWidget *parent = nullptr);
++private:
++    QTabWidget* tabWidget;
++    QJsonObject& qJsonObject;
++};
++
++
++#endif //POTOSSERVER_PARAMSERVICE_SETTINGS_DLG_H
+Index: Settings/DBConfigWidget.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/DBConfigWidget.h	(date 1667821516667)
++++ Settings/DBConfigWidget.h	(date 1667821516667)
+@@ -0,0 +1,36 @@
++//
++// Created by outlaw on 02.11.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_DBCONFIGWIDGET_H
++#define POTOSSERVER_PARAMSERVICE_DBCONFIGWIDGET_H
++
++#include <QtWidgets/QWidget>
++#include <Monitor/socket_adapter.h>
++#include <QtWidgets/QLineEdit>
++#include <QtWidgets/QPushButton>
++#include "QFormLayout"
++#include <QtWidgets/QLabel>
++#include <QtSql/QSqlDatabase>
++#include <DB_Driver/PSQL_Driver.h>
++#include "QJsonObject"
++#include "QCheckBox"
++
++class DBConfigWidget : public QWidget
++{
++public:
++    DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDriver);
++    virtual	~DBConfigWidget(){};
++    void Save();
++    void Set();
++private:
++    QLineEdit* HostName, *DatabaseName, *UserName, *Password, *Port;
++    QCheckBox* autoconnect;
++    QPushButton* connectBtn;
++    QLabel* statusLabel;
++    QJsonObject& savedConf;
++    PSQL_Driver& dbDriver;
++};
++
++
++#endif //POTOSSERVER_PARAMSERVICE_DBCONFIGWIDGET_H
+Index: Settings/ServerConnectWidget.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Settings/ServerConnectWidget.h	(date 1667818690469)
++++ Settings/ServerConnectWidget.h	(date 1667818690469)
+@@ -0,0 +1,35 @@
++//
++// Created by outlaw on 01.11.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_SERVERCONNECTWIDGET_H
++#define POTOSSERVER_PARAMSERVICE_SERVERCONNECTWIDGET_H
++
++#include <QtWidgets/QWidget>
++#include <Monitor/socket_adapter.h>
++#include <QtWidgets/QLineEdit>
++#include <QtWidgets/QPushButton>
++#include "QFormLayout"
++#include <QtWidgets/QLabel>
++#include "QJsonObject"
++#include "QCheckBox"
++
++class ServerConnectWidget : public QWidget
++{
++public:
++    ServerConnectWidget(SocketAdapter* socket, QJsonObject& JsonConf);
++    ~ServerConnectWidget(){}
++    void Set();
++    void Save();
++private:
++    SocketAdapter* Socket;
++    QLineEdit* AddrEdit, *PortEdit;
++    QPushButton* connectBtn;
++    QLabel* statusLabel;
++    QJsonObject& savedConf;
++
++    bool connectToSocket();
++};
++
++
++#endif //POTOSSERVER_PARAMSERVICE_SERVERCONNECTWIDGET_H
+Index: DB_Driver/PSQL_Driver.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- DB_Driver/PSQL_Driver.h	(date 1667832725838)
++++ DB_Driver/PSQL_Driver.h	(date 1667832725838)
+@@ -0,0 +1,31 @@
++//
++// Created by AlexKDR on 23.10.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_PSQL_DRIVER_H
++#define POTOSSERVER_PARAMSERVICE_PSQL_DRIVER_H
++
++#include <QSqlDatabase>
++#include <Param_Item/ParamItem.h>
++
++class PSQL_Driver {
++public:
++    PSQL_Driver(QJsonObject &conf);
++    bool setConnection();
++    void writeParam(ParamItem);
++    bool isConnected() const;
++    void configUpdate();
++private:
++    QSqlDatabase db;
++    bool hasConnection;
++    QJsonObject& config;
++    QString host, dbName, userName, password, port;
++    bool autoConnect;
++
++    bool createTable(const QString &tableName);
++
++    bool hasTable(const QString &tableName);
++};
++
++
++#endif //POTOSSERVER_PARAMSERVICE_PSQL_DRIVER_H
+Index: Param_Item/ParamItem.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Param_Item/ParamItem.h	(date 1667815736963)
++++ Param_Item/ParamItem.h	(date 1667815736963)
+@@ -0,0 +1,58 @@
++//
++// Created by outlaw on 27.10.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_PARAMITEM_H
++#define POTOSSERVER_PARAMSERVICE_PARAMITEM_H
++
++
++#include <QtCore/QtGlobal>
++#include <QtCore/QVariant>
++#include "QDateTime"
++#include "QJsonObject"
++
++class ParamItem {
++
++public:
++    enum States
++    {
++        InDB = 0,
++        No_DB = 1,
++        ONLINE = 2,
++        OFFLINE = 3,
++        ERROR = 4,
++    };
++
++    ParamItem() = default;
++    explicit ParamItem(uchar);
++    explicit ParamItem(QJsonObject&);
++    ParamItem(uchar, QString, bool);
++
++    [[nodiscard]] uchar getId() const;
++    [[nodiscard]] const QVariant &getValue() const;
++    [[nodiscard]] const QString &getNote() const;
++    [[nodiscard]] States getState() const;
++    [[nodiscard]] bool isWriteToDb() const;
++
++    void setValue(const QVariant &value);
++    void setNote(const QString &note);
++    void setState(States inState);
++    void setWriteToDb(bool writeToDb);
++    void setAltName(const QString&);
++    void setLastValueTime(const QDateTime& lastValueTime);
++    const QString& getAltName();
++    QString getLastValueTime();
++    QString getLastValueDay();
++    QJsonObject getJsonObject();
++private:
++    QDateTime lastValueTime;
++    uchar ID;
++    QString altName;
++    QVariant Value;
++    QString Note;
++    States state;
++    bool writeToDB;
++};
++
++
++#endif //POTOSSERVER_PARAMSERVICE_PARAMITEM_H
+Index: TableModel/ParamService_model.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- TableModel/ParamService_model.h	(date 1667389913779)
++++ TableModel/ParamService_model.h	(date 1667389913779)
+@@ -0,0 +1,50 @@
++//
++// Created by outlaw on 24.10.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_PARAMSERVICE_MODEL_H
++#define POTOSSERVER_PARAMSERVICE_PARAMSERVICE_MODEL_H
++
++#include <QtCore/QAbstractTableModel>
++#include <Param_Item/ParamItem.h>
++#include "Monitor/protos_message.h"
++#include <QBrush>
++
++class ParamService_model : public QAbstractTableModel
++{
++    Q_OBJECT
++public:
++    enum Headers
++    {
++        DB_Active,
++        Time_Day,
++        Time_Time,
++        PARAM_ID,
++        VALUE,
++        NOTES,
++        DELETE
++    };
++    explicit ParamService_model(QList<ParamItem*>&, QObject* parent = nullptr);
++    ~ParamService_model() override = default;
++
++    int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
++    QVariant data(const QModelIndex& index, int role) const Q_DECL_OVERRIDE;
++    bool setData(const QModelIndex&, const QVariant&, int) Q_DECL_OVERRIDE;
++    Qt::ItemFlags flags(const QModelIndex&) const Q_DECL_OVERRIDE;
++    QVariant headerData(int section, Qt::Orientation orientation, int role) const  Q_DECL_OVERRIDE;
++    int rowCount(const QModelIndex&) const Q_DECL_OVERRIDE;
++    void addRow();
++    void removeRow(const QModelIndex &index);
++    void update();
++    bool isDeleteCellClicked(const QModelIndex& index);
++    int getParamID(const QModelIndex &index);
++
++private:
++    QVariant GetDisplayRoleData(const QModelIndex&, ParamItem*) const;
++    QBrush GetDisplayBackgroundRole(const QModelIndex&, ParamItem*) const;
++    QList<ParamItem*>& paramPtrList;
++    static const int ColCnt = 7;
++    static const QString ColumnHeaders[ColCnt];
++};
++
++#endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_MODEL_H
+Index: ParamService.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ParamService.h	(date 1667821516667)
++++ ParamService.h	(date 1667821516667)
+@@ -0,0 +1,43 @@
++//
++// Created by outlaw on 28.10.2022.
++//
++
++#ifndef POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H
++#define POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H
++
++#include <DB_Driver/PSQL_Driver.h>
++#include <QtCore/QTimer>
++#include "QJsonObject"
++#include "QJsonArray"
++#include "QJsonDocument"
++
++class ParamService: public QObject{
++    Q_OBJECT
++public:
++    explicit ParamService(QJsonObject&, std::function<void()> func);
++    ParamService(const ParamService&)=delete;
++    ParamService(ParamService&&)=delete;
++    void ParseBootMsg(const ProtosMessage &msg);
++    QList<ParamItem*>& getPtrList();
++    bool addParam(uint incomeID, const QString &incomeNote, bool writeToDB);
++    bool removeParam(uint incomeID);
++    void updateParamValue(uchar, QString&&);
++    void configureTimer(int);
++    void saveParams();
++    void loadParams();
++    PSQL_Driver& getDbDriver();
++
++private slots:
++    void writeTimerUpdate();
++private:
++    void setPtrListFromMap();
++    std::function<void()> updateTableViewFunc;
++    QMap<uchar, ParamItem> dataMap;
++    QList<ParamItem*> ptrList;
++    PSQL_Driver dbDriver;
++    QTimer* writeTimer;
++    int mSecWriteTimer = 1000;
++    QJsonObject& qJsonObject;
++};
++
++#endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>/cmake-build-debug/\r\n.idea\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .gitignore	(revision 71db31dbfa80ec02c8de157989e67cd29423461c)
++++ .gitignore	(date 1667816808248)
+@@ -1,2 +1,1 @@
+-/cmake-build-debug/
+-.idea
++/cmake-build-debug/
+\ No newline at end of file
+Index: qss/toolbar.css
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- qss/toolbar.css	(date 1667815737010)
++++ qss/toolbar.css	(date 1667815737010)
+@@ -0,0 +1,11 @@
++QToolBar{
++    padding: 9px;
++    /*background-color: lavender;*/
++    color: gray;
++    border-bottom: 3px solid gray;
++}
++QToolBar QWidget{
++    padding: 5px;
++    font-weight: bold;
++    color: gray;
++}
+diff --git protos_wghat/packet_utils.cpp Ext_Libs/protos_wghat/packet_utils.cpp
+rename from protos_wghat/packet_utils.cpp
+rename to Ext_Libs/protos_wghat/packet_utils.cpp
+diff --git protos_wghat/packet_asm.h Ext_Libs/protos_wghat/packet_asm.h
+rename from protos_wghat/packet_asm.h
+rename to Ext_Libs/protos_wghat/packet_asm.h
+diff --git protos_wghat/packet_utils.h Ext_Libs/protos_wghat/packet_utils.h
+rename from protos_wghat/packet_utils.h
+rename to Ext_Libs/protos_wghat/packet_utils.h
+diff --git protos_wghat/fixed_packet.h Ext_Libs/protos_wghat/fixed_packet.h
+rename from protos_wghat/fixed_packet.h
+rename to Ext_Libs/protos_wghat/fixed_packet.h
+diff --git qss/main.css qss/main.css
+new file mode 100644
