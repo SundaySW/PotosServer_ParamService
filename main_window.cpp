@@ -3,209 +3,340 @@
 //
 
 #include "main_window.h"
-#include "fixed_packet.h"
-#include "log_view.h"
-#include "packet_utils.h"
 #include <algorithm>
 #include <qapplication.h>
 #include <qaction.h>
 #include <qdockwidget.h>
-#include <qjsondocument.h>
-#include <qstackedwidget.h>
 #include <qstatusbar.h>
-#include <qboxlayout.h>
-#include <qbuttongroup.h>
 #include <qevent.h>
-#include <qjsonarray.h>
-#include <qicon.h>
 #include <qmenu.h>
-#include <qtcpsocket.h>
 #include <qtoolbar.h>
 #include <qtoolbutton.h>
 #include <QtWidgets/QDialogButtonBox>
-#include <QtGui/QRegExpValidator>
-#include "qfiledialog.h"
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QMessageBox>
+#include "SetParamValueDlg.h"
 
-SocketAdapter Socket;
+#ifdef _BUILD_TYPE_
+#define CURRENT_BUILD_TYPE_ _BUILD_TYPE_
+#else
+#define CURRENT_BUILD_TYPE_ "CHECK CMAKE"
+#endif
 
 MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
         : QMainWindow(parent)
         , CentralWin(new QWidget(parent))
-        , Toolbar(nullptr)
-        , Dlg(new ConnectionDialog(this, &Socket))
-        , statusLabel(new QLabel("Status: ", this))
+        , Toolbar(CreateToolbar())
+        , serverLabel(new QLabel("ProtosServer", this))
+        , dbLabel(new QLabel("DataBase", this))
+        , logWidget(new QListWidget(this))
+        , tableTabWidget(new QTabWidget(this))
 {
-    Toolbar = CreateToolbar();
+    openFileLoadConfig();
+    paramService = new ParamService(ConfJson);
+    updateParamsTab = new UpdateParamsTab(paramService->getPtrList(ParamItemType::UPDATE),this);
+    setParamsTab = new SetParamsTab(paramService->getPtrList(ParamItemType::SET),this);
+    settingsDlg = new Settings_dlg(paramService, ConfJson, this);
+
+    loadMainWindowSettings();
     auto* mainLayout = new QVBoxLayout();
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    statusLabel->setAlignment(Qt::AlignHCenter);
-    statusLabel->setMinimumSize(statusLabel->sizeHint());
-    statusBar()->addWidget(statusLabel);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
     CentralWin->setLayout(mainLayout);
     setCentralWidget(CentralWin);
-    logView = new LogView(this);
-    mainLayout->addWidget(logView);
-    connect(fwLoader, SIGNAL(signalNextBlock(uint, uint, uint)), this, SLOT(updateStatus(uint, uint, uint)));
-    connect(fwLoader, SIGNAL(signalBootData(uint)), this, SLOT(transmitBlock(uint)));
-    connect(fwLoader, SIGNAL(signalAckReceived()), this, SLOT(ackInBootReceived()));
-    connect(fwLoader, SIGNAL(signalFinishedOK(uint, int)), this, SLOT(finishedOk(uint,int)));
-    connect(fwLoader, SIGNAL(signalError(const QString&, uint)), this, SLOT(getError(const QString&, uint)));
-    Socket.AddRxMsgHandler([this](const ProtosMessage& rxMsg) {	fwLoader->ParseBootMsg(rxMsg);});
-    Socket.AddTxMsgHandler([this](const ProtosMessage& txMsg) { txMsgHandler(txMsg);});
 
-    if (!Socket.Connect("127.0.0.5", 3699, 1000)){
-        statusLabel->setText(tr("Cant connect to Server"));
-        logView->AddMsg(tr("Cant connect to Server"));
-    }
-    else{
-        statusLabel->setText(tr("Connected to Server"));
-        logView->AddMsg(tr("Connected to Server"));
-    }
+    makeStatusBar();
+    mainLayout->addWidget(makeTabs());
+    mainLayout->addWidget(makeParamSetGroupBox());
+    mainLayout->addWidget(logWidgetConfig());
+
+    connect(updateParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
+    connect(updateParamsTab, &UpdateParamsTab::addedParamSig, [this](uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType){paramService->addParam(incomeID, incomeHostAddr, incomeType);});
+    connect(updateParamsTab, SIGNAL(onlyDBParamShow(bool)), this, SLOT(OnlyInDBShow(bool)));
+    connect(updateParamsTab, SIGNAL(onlyOnlineParamShow(bool)), this, SLOT(OnlyOnlineShow(bool)));
+    connect(updateParamsTab, SIGNAL(tableCellDataUpdated(const QModelIndex&)), this, SLOT(OnChangedValueTableCell(const QModelIndex&)));
+
+    connect(setParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
+    connect(setParamsTab, &SetParamsTab::addedParamSig, [this](uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType){ paramService->addParam(incomeID, incomeHostAddr, incomeType);});
+    connect(setParamsTab, SIGNAL(tableCellDataUpdated(const QModelIndex&)), this, SLOT(OnChangedValueTableCell(const QModelIndex&)));
+
+    connect(paramService, &ParamService::changedParamState, [this](ParamItemType type){
+        if(type == UPDATE) updateParamsTab->getModel()->update(IParamService_model::UPDATE_TASK);
+        else if(type == SET) setParamsTab->getModel()->update(IParamService_model::UPDATE_TASK);
+    });
+    connect(paramService, &ParamService::addedParamFromLine, [this](ParamItemType type){
+        if(type == UPDATE) updateParamsTab->getModel()->update(IParamService_model::INSERT_ROW_TASK);
+        else if(type == SET) setParamsTab->getModel()->update(IParamService_model::INSERT_ROW_TASK);
+    });
+    connect(paramService, &ParamService::needToResetModels, [this](){
+        updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
+        setParamsTab->getModel()->update(IParamService_model::RESET_TASK);
+    });
+    connect(paramService, &ParamService::databaseWriteFail, [this](){
+        logToFile->setChecked(paramService->isWriteToFile());
+        AddToLog(QString("Failed to write param in DataBase - please reconnect in setting and uncheck logToFile if needed to return in normal mode "),true);
+        checkServicesConnection();
+    });
+    connect(paramService, &ParamService::errorInDBToLog, [this](const QString& errorStr){ AddToLog(errorStr,true);});
+    connect(paramService, &ParamService::eventInDBToLog, [this](const QString& eventStr){ AddToLog(eventStr);});
+    connect(settingsDlg, &Settings_dlg::eventInSettings, [this](const QString& str, bool err){
+        AddToLog(str, err);
+        checkServicesConnection();
+    });
+
+    connect(settingsDlg, SIGNAL(settingsDialogClosed()), this, SLOT(checkServicesConnection()));
+    checkServicesConnection();
+//  updateTimerID = startTimer(300);
+}
+
+QGroupBox* MainWindow::makeParamSetGroupBox(){
+    auto* addParamGroupBox = new QGroupBox(tr("Some settings here"), this);
+    addParamGroupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    auto* searchGroupBoxLayout = new QHBoxLayout(addParamGroupBox);
+    addParamGroupBox->setLayout(searchGroupBoxLayout);
+    auto* makeEvent = new QPushButton("Make Event");
+    connect(makeEvent, &QPushButton::clicked, [this]()
+    {
+        QDialog dlg(this);
+        dlg.setWindowTitle("Make Event");
+        auto eventStr = new QLineEdit("");
+        auto *btn_box = new QDialogButtonBox(&dlg);
+        btn_box->setStandardButtons(QDialogButtonBox::Save);
+        connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+        auto *layout = new QFormLayout();
+        layout->addRow(tr("Event String: "), eventStr);
+        layout->addWidget(btn_box);
+        dlg.setLayout(layout);
+        if(dlg.exec() == QDialog::Accepted)
+            paramService->logEventToDB(eventStr->text());
+    });
+    logToFile = new QCheckBox("Log to file");
+    logToFile->setChecked(paramService->isWriteToFile());
+    connect(logToFile, &QCheckBox::toggled, [this](bool checked)
+    {
+        paramService->setWriteToFile(checked);
+    });
+    auto selfAddrLabel = new QLabel("Self Address: ", this);
+    auto selfAddr = new QLineEdit( this);
+    selfAddr->setText(QString("%1").arg(paramService->getSelfAddr(),0,16));
+    connect(selfAddr, &QLineEdit::textChanged, [this](const QString& newSelfAddr){
+        paramService->setSelfAddr(newSelfAddr.toInt(nullptr,16));
+    });
+//    makeEvent->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
+//    logToFile->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
+    selfAddr->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
+    makeEvent->setEnabled(true);
+    searchGroupBoxLayout->addWidget(makeEvent);
+    searchGroupBoxLayout->addWidget(logToFile);
+    searchGroupBoxLayout->addWidget(selfAddrLabel);
+    searchGroupBoxLayout->addWidget(selfAddr);
+    return addParamGroupBox;
+}
+
+void MainWindow::makeStatusBar(){
+    serverLabel->setAlignment(Qt::AlignHCenter);
+    serverLabel->setMinimumSize(serverLabel->sizeHint());
+    dbLabel->setAlignment(Qt::AlignHCenter);
+    dbLabel->setMinimumSize(dbLabel->sizeHint());
+    statusBar()->addWidget(serverLabel);
+    statusBar()->addWidget(dbLabel);
+}
+
+QTabWidget* MainWindow::makeTabs(){
+    tableTabWidget->setTabShape(QTabWidget::Rounded);
+    tableTabWidget->setTabPosition(QTabWidget::North);
+    tableTabWidget->setMovable(true);
+    tableTabWidget->setTabBarAutoHide(true);
+    tableTabWidget->addTab(updateParamsTab, "Update Params");
+    tableTabWidget->addTab(setParamsTab, "Control Params");
+    return tableTabWidget;
 }
 
 QToolBar* MainWindow::CreateToolbar()
 {
     QToolBar* toolbar = addToolBar(QString());
     toolbar->setMovable(false);
-    toolbar->setStyleSheet("QToolBar { background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\ stop: 0 #f6f7fa, stop: 1 #dadbde); }");
 
-    auto socketConnect = toolbar->addAction(QString("Connect Server"));
-    socketConnect->setObjectName("ServerConnect");
-    socketConnect->setCheckable(true);
-    socketConnect->setToolTip(QStringLiteral("Подключиться/Отключиться к серверу"));
-    connect(socketConnect, &QAction::triggered, [this](bool checked)
+    auto settingsWindow = toolbar->addAction(QString("Settings"));
+    settingsWindow->setObjectName("Settings");
+    settingsWindow->setToolTip(QString("Open settings window"));
+    connect(settingsWindow, &QAction::triggered, [this]()
     {
-        auto ConnDialog = new ConnectionDialog(this, &Socket);
-        UpdatePortButton(ConnDialog->exec() != 0);
-        delete ConnDialog;
+        settingsDlg->show();
+        settingsDlg->raise();
+        settingsDlg->activateWindow();
     });
-    toolbar->addSeparator();
-    auto loadDevice = toolbar->addAction(QIcon(), QString("Add Device"));
-    loadDevice->setObjectName("AddDevice");
-    loadDevice->setCheckable(false);
-    loadDevice->setToolTip(QStringLiteral("Добавить девайс"));
-    connect(loadDevice, &QAction::triggered, [this](bool checked)
-    {
-        openFile();
-    });
-
-    toolbar->addSeparator();
-    auto setDelay = toolbar->addAction(QIcon(), QString("Set Adapter Delay"));
-    setDelay->setObjectName("SetDelay");
-    setDelay->setCheckable(false);
-    setDelay->setToolTip(QStringLiteral("Изменить задержку отправки в коробку"));
-    connect(setDelay, &QAction::triggered, [this](bool checked)
-    {
-        setDelayDlg();
-    });
-
-    toolbar->addSeparator();
-    auto stopProcess = toolbar->addAction(QIcon(), QString("Stop Process"));
-    stopProcess->setObjectName("stopProcess");
-    stopProcess->setCheckable(false);
-    stopProcess->setToolTip(QStringLiteral("Остановить процесс"));
-    connect(stopProcess, &QAction::triggered, [this](bool checked)
-    {
-        stopProcessDlg();
-    });
-
-//    toolbar->addSeparator();
-//    auto sendMSG = toolbar->addAction(QIcon(), QString("sendMSG"));
-//    sendMSG->setObjectName("sendMSG");
-//    sendMSG->setCheckable(false);
-//    sendMSG->setToolTip(QStringLiteral("Отправить сообщ"));
-//    connect(sendMSG, &QAction::triggered, [this](bool checked)
-//    {
-//        sendMessage();
-//    });
-//    toolbar->addSeparator();
-//    auto getBlockOKMSG = toolbar->addAction(QIcon(), QString("getBlockOKMSG"));
-//    getBlockOKMSG->setObjectName("getBlockOKMSG");
-//    getBlockOKMSG->setCheckable(false);
-//    getBlockOKMSG->setToolTip(QStringLiteral("Получить блок ОК"));
-//    connect(getBlockOKMSG, &QAction::triggered, [this, &blockNum](bool checked)
-//    {
-//        getMessage();
-//    });
-//    toolbar->addSeparator();
 
     auto* expander = new QWidget(toolbar);
     expander->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     toolbar->addWidget(expander);
 
-    auto exit = toolbar->addAction( QString("Exit"));
-    exit->setToolTip(QStringLiteral("Закрыть приложение"));
+    auto exit = toolbar->addAction( QString("Save"));
+    exit->setToolTip(QString("Save all and close app"));
     connect(exit, &QAction::triggered, [this](bool checked)
     {
-        close();
+        saveAll();
     });
+
     return toolbar;
 }
 
-void MainWindow::UpdatePortButton(bool checked)
-{
-    auto btn = Toolbar->findChild<QAction*>("ServerConnect");
-    btn->setText(checked ? "Connected" : "Disconnected");
-//    btn->setIcon(QIcon(checked ? ":/plugin" : ":/plugout_red"));
-    btn->setChecked(checked);
+QListWidget* MainWindow::logWidgetConfig(){
+    logWidget->setFixedHeight(80);
+    logWidget->setAlternatingRowColors(true);
+    return logWidget;
 }
 
-void MainWindow::getError(const QString &error, uint uid) {
-    QDialog dlg(this);
-    dlg.setWindowTitle(error);
-    auto *layout = new QFormLayout();
-    auto errorLabel = new QLabel(error, &dlg);
-    auto questionLabel = new QLabel((QStringLiteral("Finish device FW with UID: %1").arg(uid,8,16)), &dlg);
-    auto *btn_box = new QDialogButtonBox(&dlg);
-    btn_box->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    connect(btn_box, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+void MainWindow::openFileLoadConfig() {
+    auto pathToFile = QString(CURRENT_BUILD_TYPE_) == "Debug" ? "/../" : "/";
+    configFile = new QFile(QCoreApplication::applicationDirPath() + QString("%1/saved_params.json").arg(pathToFile));
+    configFile->open(QIODevice::ReadWrite);
+    QByteArray saveData = configFile->readAll();
+    QJsonDocument jsonDocument(QJsonDocument::fromJson(saveData));
+    ConfJson = jsonDocument.object();
 
-    errorLabel->setAlignment(Qt::AlignHCenter);
-    errorLabel->setMinimumSize(statusLabel->sizeHint());
-    layout->addRow(errorLabel);
-    layout->addRow(questionLabel);
-    layout->addWidget(btn_box);
+    QFile styleFile(QCoreApplication::applicationDirPath() + QString("%1/qss/logWidget.css").arg(pathToFile));
+    styleFile.open(QIODevice::ReadOnly);
+    logWidget->setStyleSheet(styleFile.readAll());
+    styleFile.close();
 
-    dlg.setLayout(layout);
-
-    if(dlg.exec() == QDialog::Accepted) {
-        fwLoader->cancelFWLoad(uid);
-    }
+    styleFile.setFileName(QCoreApplication::applicationDirPath() + QString("%1/qss/toolbar.css").arg(pathToFile));
+    styleFile.open(QIODevice::ReadOnly);
+    Toolbar->setStyleSheet(styleFile.readAll());
+    styleFile.close();
 }
 
-void MainWindow::openFile() {
-    QDialog dlg(this);
-    dlg.setWindowTitle(tr("AddDevice"));
-    auto *uid = new QLineEdit("FFFFFF", &dlg);
-    auto *addr = new QLineEdit("FF", &dlg);
+void MainWindow::timerEvent(QTimerEvent *event){
+    updateParamsTab->getModel()->update(UpdateParamService_model::UPDATE_TASKS::UPDATE_TASK);
+}
 
-    auto *btn_box = new QDialogButtonBox(&dlg);
-    btn_box->setStandardButtons(QDialogButtonBox::Ok);
-    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-
-    auto *layout = new QFormLayout();
-    layout->addRow(tr("UID: "), uid);
-    layout->addRow(tr("ADDR: "), addr);
-    layout->addWidget(btn_box);
-
-    dlg.setLayout(layout);
-    if(dlg.exec() == QDialog::Accepted) {
-        uint32_t uid24 = uid->text().toUInt(nullptr, 16);
-        uint8_t addr8 = addr->text().toShort(nullptr, 16);
-        QString fileName = QFileDialog::getOpenFileName(this,
-                                                        tr("Open Bin"), "/home", tr("Bin Files (*.bin)"));
-//            QString fileName = "D:\\u\\sa_pico_can.bin";
-        QFile file(fileName);
-        if (file.open(QIODevice::ReadWrite))
-        {
-            fwLoader->addDevice(fileName, addr8, uid24,0x1);
-            qDebug() << (tr("UID: %1 ADDR: %2 ").arg(uid24).arg(addr8));
-            statusLabel->setText(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
-            logView->AddMsg(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
+void MainWindow::OnClickedTableCell(const QModelIndex &index) {
+    auto* model = (IParamService_model*)index.model();
+    auto* param = model->getParam(index);
+    auto mapKey = ParamService::makeMapKey(*param);
+    if(model->getType() == SET && model->isSetCellClicked(index.column())){
+        if(setValueDlgMap.contains(mapKey)) {
+            setValueDlgMap.value(mapKey)->show();
+            return;
         }
-    } else{
-        statusLabel->setText(tr("Aborted adding device"));
-        logView->AddMsg(tr("Aborted adding device"));
+        auto* dlg = new SetParamValueDlg(param->geParamId(), param->getHostID(), this);
+        dlg->show();
+        dlg->raise();
+        dlg->activateWindow();
+        connect(dlg, &SetParamValueDlg::paramValueSet, [this, index, param, dlg](uchar paramID, uchar hostID, const QVariant& value) {
+            paramService->setParamValueChanged(index.row(), value);
+        });
+        setValueDlgMap.insert(mapKey, dlg);
     }
+    if(model->isDeleteCellClicked(index)){
+        QDialog dlg(this);
+        dlg.setWindowTitle("Move/Remove Param");
+        auto *layout = new QFormLayout();
+        auto label = new QLabel(QString("Move/Remove Param: ") + QString("%1?").arg(mapKey).toUpper().prepend("0x"), &dlg);
+        auto* moveBtn = new QPushButton("Move");
+        auto* removeBtn = new QPushButton("Remove");
+        label->setAlignment(Qt::AlignHCenter);
+        layout->addRow(label);
+        if(param->getParamType()==UPDATE) layout->addWidget(moveBtn);
+        layout->addWidget(removeBtn);
+        dlg.setLayout(layout);
+        connect(moveBtn, &QPushButton::clicked, [this, mapKey]() {
+            paramService->moveUpdateToSet(mapKey); });
+        connect(removeBtn, &QPushButton::clicked, [this, param, model, index, mapKey, &dlg](){
+            bool paramDeleted = paramService->removeParam(*param);
+            if(paramDeleted) model->removeRow(index);
+            if(setValueDlgMap.contains(mapKey)){
+                setValueDlgMap[mapKey]->setAttribute(Qt::WA_DeleteOnClose, true);
+                setValueDlgMap[mapKey]->close();
+                setValueDlgMap.remove(mapKey);
+            }
+            dlg.close();
+        });
+        dlg.exec();
+    }
+}
+
+void MainWindow::saveMainWindowSettings(){
+    QJsonObject confObj;
+    confObj["SelfAddr"] = paramService->getSelfAddr();
+    confObj["WriteToFile"] = paramService->isWriteToFile();
+    ConfJson["MainWindow_Conf"] = confObj;
+}
+
+void MainWindow::loadMainWindowSettings(){
+    auto confObject = ConfJson.value("MainWindow_Conf");
+    paramService->setSelfAddr(confObject["SelfAddr"].toInt());
+    paramService->setWriteToFile(confObject["WriteToFile"].toBool());
+}
+
+void MainWindow::saveAll(){
+    paramService->saveParams();
+    saveMainWindowSettings();
+    QJsonDocument doc;
+    doc.setObject(ConfJson);
+    if(!configFile->isOpen()) {
+        auto pathToFile = QString(CURRENT_BUILD_TYPE_) == "Debug" ? "/../" : "/";
+        configFile = new QFile(QCoreApplication::applicationDirPath() + QString("%1/saved_params.json").arg(pathToFile));
+        configFile->open(QIODevice::ReadWrite);
+    }
+    configFile->resize(0);
+    configFile->write(doc.toJson(QJsonDocument::Indented));
+    configFile->close();
+
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Protos Config",
+                                                                tr("Save params and config?\n"),
+                                                                QMessageBox::No | QMessageBox::Save,
+                                                                QMessageBox::Save);
+    if (resBtn == QMessageBox::Save)
+        saveAll();
+    paramService->closeAll();
+    configFile->close();
+    close();
+}
+
+void MainWindow::checkServicesConnection(){
+    if(paramService->isSocketConnected())
+        serverLabel->setStyleSheet("color : green");
+    else
+        serverLabel->setStyleSheet("color : red");
+    if(paramService->getDbDriver().isDBOk())
+        dbLabel->setStyleSheet("color : green");
+    else
+        dbLabel->setStyleSheet("color : red");
+}
+
+void MainWindow::AddToLog(const QString& string, bool isError)
+{
+    logWidget->addItem(QTime::currentTime().toString("HH:mm:ss:zzz").append(" : ").append(string));
+    if (isError)
+        logWidget->item(logWidget->count() - 1)->setForeground(QBrush(QColor("red")));
+    else
+        logWidget->item(logWidget->count() - 1)->setForeground(QBrush(QColor("green")));
+}
+
+void MainWindow::OnChangedValueTableCell(const QModelIndex& index) {
+//    if(index.column() == SetParamService_model::Headers::VALUE)
+//        paramService->setParamValueChanged(index.row());
+    auto* model = (IParamService_model*)index.model();
+    auto* param = model->getParam(index);
+    auto tableName = param->getTableName();
+    if(index.column() == SetParamService_model::Headers::PARAM_ID || index.column() == UpdateParamService_model::Headers::PARAM_ID){
+        paramService->logViewChangesToDB(QString("%1 : new alt_name : %2").arg(tableName).arg(index.model()->data(index).toString()));
+    }
+    else if(index.column() == SetParamService_model::Headers::NOTES || index.column() == UpdateParamService_model::Headers::NOTES){
+        paramService->logViewChangesToDB(QString("%1 : new note : %2").arg(tableName).arg(index.model()->data(index).toString()));
+    }
+}
+
+void MainWindow::OnlyInDBShow(bool state) {
+    paramService->sortUpdateParamListAboutDB(state);
+    updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
+}
+
+void MainWindow::OnlyOnlineShow(bool state) {
+    paramService->sortUpdateListAboutOnline(state);
+    updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
 }

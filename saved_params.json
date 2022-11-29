@@ -1,0 +1,35 @@
+{
+    "ConfObject": {
+        "ServerIP": "127.0.0.5",
+        "ServerPort": "3699"
+    },
+    "DBConfObject": {
+        "DatabaseName": "sa_pump_metrics",
+        "HostName": "localhost",
+        "Password": "2022!SA_protos_db",
+        "Port": "5432",
+        "UserName": "sa_params",
+        "autoconnect": true
+    },
+    "MainWindow_Conf": {
+        "SelfAddr": 34,
+        "WriteToFile": false
+    },
+    "Params": [
+        {
+            "DestID": 1,
+            "ExpectedValue": "432",
+            "HostID": 34,
+            "ID": 34,
+            "LastValueType": 8,
+            "Note": "",
+            "SenderID": 34,
+            "Type": 1,
+            "Value": "432",
+            "altName": "RR",
+            "dateTime": "Вт ноя 29 14:41:40 2022",
+            "state": 1,
+            "writeToDB": true
+        }
+    ]
+}

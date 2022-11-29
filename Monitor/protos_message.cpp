@@ -175,8 +175,8 @@ QString ProtosMessage::GetErrorMsg() const
 		}
 		return errorMsg;
 	case PERR:		
-		id.arg(Data[0], ToHexStr).toUpper();
-		err.arg(Data[1], ToHexStr).toUpper();
+//		id.arg(Data[0], ToHexStr).toUpper();
+//		err.arg(Data[1], ToHexStr).toUpper();
 		return QObject::tr("Got PERR 0x%1 from ID 0x%2 ").arg(err, id);		
 	default:
 		return "";
@@ -335,6 +335,15 @@ uchar ProtosMessage::GetParamId() const
 	}
 }
 
+uchar ProtosMessage::GetSenderAddr() const
+{
+    return SenderAddr;
+}
+
+uchar ProtosMessage::GetDestAddr() const{
+    return DestAddr;
+}
+
 bool ProtosMessage::IsCorrect(QString& errorMsg) const
 {
 	QString arg1("%1"), arg2("%1"), arg3("%1"), arg4("%1");
@@ -354,8 +363,8 @@ bool ProtosMessage::IsCorrect(QString& errorMsg) const
 		if (Dlc >= 3)
 			return true;
 		arg1 = GetMsgType();
-		arg2.arg(Data[1], ToHexStr).toUpper();
-		arg3.arg(GetCmdId(), ToHexStr).toUpper();
+//		arg2.arg(Data[1], ToHexStr).toUpper();
+//		arg3.arg(GetCmdId(), ToHexStr).toUpper();
 		arg4 = Dlc;
 		errorMsg = QObject::tr("Got %1: 0x%2 for 0x%3 cmd with wrong DLC (wanted not less than 3, got %4)").arg(arg1, arg2, arg3, arg4);
 		break;
@@ -389,7 +398,6 @@ ProtosMessage& ProtosMessage::SetCanIdFields(ProtosMessage::MsgTypes msgType, uc
 	if (msgType != NONE) MsgType = msgType;
 	if (senderAddr) SenderAddr = senderAddr;
 	if (destAddr)	DestAddr = destAddr;
-	
 	return *this;
 }
 
@@ -435,7 +443,6 @@ ProtosMessage& ProtosMessage::SetParamField(ProtosMessage::ParamFields field, uc
 			if (fieldValue != QVariant())
 				FloatField = fieldValue.toFloat();
 			break;
-
 			// all other param fields are read only
 		}
 		break;

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PotosServer_ParamService C CXX ASM)
+add_definitions(-D_VER="V1.0")
+add_definitions(-D_BUILD_TYPE_="${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
@@ -21,6 +23,7 @@ find_package(${qt_ver}Gui         REQUIRED)
 find_package(${qt_ver}Core        REQUIRED)
 find_package(${qt_ver}Network     REQUIRED)
 find_package(${qt_ver}SerialPort  REQUIRED)
+find_package(${qt_ver}Sql         REQUIRED)
 
 add_compile_options(
         -finput-charset=CP1251
@@ -29,11 +32,17 @@ add_compile_options(
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_TableModel/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_Settings/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_ParamTabs/*.*
         )
 
 set(SOURCE_FILES
         main.cpp
         main_window.cpp
+        ParamService.cpp
         ${WIN32_RESOURCES}
         ${SOURCES}
         )
@@ -42,9 +51,32 @@ add_executable(${PROJECT_NAME}
         ${SOURCE_FILES}
         )
 
+
+IF(CMAKE_BUILD_TYPE MATCHES Release)
+    message("Release build!")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/saved_params.json ${CMAKE_CURRENT_BINARY_DIR}/saved_params.json COPYONLY)
+    add_custom_command(
+            TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/qss/ ${CMAKE_CURRENT_BINARY_DIR}/qss/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/logs/ ${CMAKE_CURRENT_BINARY_DIR}/logs/
+    )
+    add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND windeployqt "$<TARGET_FILE:${PROJECT_NAME}>"
+            VERBATIM)
+ENDIF()
+
+#target_compile_definitions(${PROJECT_NAME}
+#        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
+
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Monitor
+        ${CMAKE_CURRENT_SOURCE_DIR}/DB_Driver
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_TableModel
+        ${CMAKE_CURRENT_SOURCE_DIR}/Param_Item
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_Settings/
+        ${CMAKE_CURRENT_SOURCE_DIR}/view_ParamTabs/
         )
 
 target_sources(${PROJECT_NAME}
@@ -57,11 +89,4 @@ target_link_libraries(${PROJECT_NAME} ${qt_ver}::Gui)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Widgets)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Network)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::SerialPort)
-
-#add_custom_command(
-#        TARGET ${PROJECT_NAME} POST_BUILD
-#        COMMAND windeployqt "$<TARGET_FILE:${PROJECT_NAME}>"
-#        VERBATIM)
-
-#target_compile_definitions(${PROJECT_NAME}
-#        PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
+target_link_libraries(${PROJECT_NAME} ${qt_ver}::Sql)

@@ -10,13 +10,13 @@ ConnectionDialog::ConnectionDialog(QWidget* parent, SocketAdapter* socket) :
 	ConnectButton(new QPushButton(tr("Connect"), this)),
 	Socket(socket)
 {
-	setWindowTitle(tr("Connection Settings"));	
+	setWindowTitle(tr("Connection view_Settings"));
 	StatusLabel->setWordWrap(true);
 	StatusLabel->setMinimumWidth(210);
 	StatusLabel->setMinimumHeight(25);
 	VBoxLayout->addWidget(StatusLabel);
 	VBoxLayout->addSpacing(10);
-	VBoxLayout->addLayout(FormLayout);	
+	VBoxLayout->addLayout(FormLayout);
 	FormLayout->addRow(tr("IP:"), IpLineEdit);
 	FormLayout->addRow(tr("Port:"), PortLineEdit);
 	VBoxLayout->addWidget(ConnectButton);

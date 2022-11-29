@@ -210,6 +210,8 @@ struct ProtosMessage
 			};
 		};
 	};*/
+    uchar GetSenderAddr() const;
+    uchar GetDestAddr() const;
 };
 
 Q_DECLARE_METATYPE(ProtosMessage)
