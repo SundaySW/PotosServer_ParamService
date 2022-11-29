@@ -20,7 +20,7 @@ public:
     explicit ParamService(QJsonObject &inJson);
     ParamService(const ParamService&) = delete;
 
-    bool addParam(ParamItem &&paramItem);
+    bool addParam(ParamItem &&paramItem, bool addToDB=true);
     bool addParam(uchar, uchar, ParamItemType);
     bool removeParam(const ParamItem &incomeParam);
     bool updateParam(const ProtosMessage &message, const QString &mapKey);
@@ -38,12 +38,14 @@ public:
     static QString makeMapKey(const ParamItem &paramItem);
     void sortUpdateParamListAboutDB(bool);
     void sortUpdateListAboutOnline(bool);
+    void sortAllParamsAboutHost(const QString &host);
     void setSelfAddr(uchar selfAddr);
     void setWriteToFile(bool writeToFile);
     bool isWriteToFile() const;
     void moveUpdateToSet(const QString &mapKey);
     uchar getSelfAddr() const;
     void closeAll();
+    QSet<uchar> getAllHostsInSet();
 signals:
     void changedParamState(ParamItemType);
     void addedParamFromLine(ParamItemType);

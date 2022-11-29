@@ -34,10 +34,10 @@ QList<ParamItem *>& ParamService::getPtrList(ParamItemType type) {
 }
 
 bool ParamService::addParam(uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType) {
-    return addParam(ParamItem(incomeID, incomeHostAddr, incomeType));
+    return addParam(ParamItem(incomeID, incomeHostAddr, incomeType), false);
 }
 
-bool ParamService::addParam(ParamItem &&paramItem) {
+bool ParamService::addParam(ParamItem &&paramItem, bool addToDB) {
     auto mapKey = makeMapKey(paramItem);
     if(dataMap.contains(mapKey)) return false;
     dataMap.insert(mapKey, paramItem);
@@ -46,7 +46,7 @@ bool ParamService::addParam(ParamItem &&paramItem) {
     makeParamTimer(mapKey);
     if(type == ParamItemType::UPDATE) ptrListUpdate.append(appendParam);
     else if(type == ParamItemType::SET) ptrListSet.append(appendParam);
-    writeParamToDB(mapKey);
+    if(addToDB) writeParamToDB(mapKey);
     emit addedParamFromLine(type);
     return true;
 }
@@ -142,8 +142,6 @@ void ParamService::writeParamToFile(ParamItem &param, const QString &event) {
     }
     textStream << param.getLogToFileStr(event);
 }
-
-
 
 void ParamService::configureTimer(int timerValue){
     writeTimer = new QTimer();
@@ -291,13 +289,29 @@ void ParamService::sortUpdateListAboutOnline(bool arg) {
     }
 }
 
+void ParamService::sortAllParamsAboutHost(const QString &hostString) {
+    ptrListUpdate.clear();
+    ptrListSet.clear();
+    bool needToSort;
+    uchar host = hostString.toShort(&needToSort,16);
+    for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
+        auto paramType = it.value().getParamType();
+        auto paramHostID = it.value().getHostID();
+        if(paramHostID != host && needToSort) continue;
+        if(paramType == UPDATE)
+            ptrListUpdate.append(&it.value());
+        else if(paramType == SET)
+            ptrListSet.append(&it.value());
+    }
+}
+
 void ParamService::timerFinished(int timID) {
     for(auto it=timerMap.begin(); it!=timerMap.end(); it++){
         if(it.value()->timerId() == timID){
             it.value()->stop();
             if(dataMap.contains(it.key())) {
                 dataMap[it.key()].timeoutUpdate();
-                emit changedParamState(UPDATE);
+                if(!ptrListUpdate.isEmpty()) emit changedParamState(UPDATE);
             }
             break;
         }
@@ -333,4 +347,11 @@ void ParamService::logEventToDB(const QString &eventStr) {
 
 void ParamService::logViewChangesToDB(const QString& eventStr) {
     dbDriver.writeViewChanges(eventStr);
+}
+
+QSet<uchar> ParamService::getAllHostsInSet() {
+   auto retVal = QSet<uchar>();
+   for(const auto& param : dataMap)
+       retVal.insert(param.getHostID());
+   return retVal;
 }

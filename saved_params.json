@@ -16,20 +16,5 @@
         "WriteToFile": false
     },
     "Params": [
-        {
-            "DestID": 1,
-            "ExpectedValue": "432",
-            "HostID": 34,
-            "ID": 34,
-            "LastValueType": 8,
-            "Note": "",
-            "SenderID": 34,
-            "Type": 1,
-            "Value": "432",
-            "altName": "RR",
-            "dateTime": "Вт ноя 29 14:41:40 2022",
-            "state": 1,
-            "writeToDB": true
-        }
     ]
 }

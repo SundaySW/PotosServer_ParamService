@@ -11,6 +11,8 @@ ParamItem::ParamItem(uchar incomeID, uchar hostAddr, ParamItemType type)
     Value(""),
     Note(("")),
     paramType(type),
+    expectedValue(""),
+    lastValueType(type==SET?ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS),
     writeToDB(false),
     state(OFFLINE)
 {
@@ -114,7 +116,7 @@ QString ParamItem::getTableInsertValues(const QString &eventStr) const {
 }
 
 QString ParamItem::getLogToFileHead() {
-    return "=Time_Stamp=Host_ID=Param_id=Value=Type=Sender/Dest_ID=Note=Event=\n";
+    return "=Time_Stamp=Host_ID=Param_id=Value=Type=Sender/Dest_ID=Note\n";
 }
 
 QString ParamItem::getLogToFileStr(const QString &eventStr) {

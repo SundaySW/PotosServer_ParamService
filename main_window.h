@@ -39,31 +39,33 @@ private:
     QLabel* dbLabel;
     QWidget* CentralWin;
     QToolBar* Toolbar;
+    QListWidget* logWidget;
+    QTabWidget* tableTabWidget;
     UpdateParamsTab* updateParamsTab;
     SetParamsTab* setParamsTab;
+    QCheckBox* logToFile;
 
     Settings_dlg* settingsDlg;
-    QMap<QString, SetParamValueDlg*> setValueDlgMap;
+    QMap<QString, SetParamValueDlg*> setParamValueDlgMap;
+    QSet<uchar> allHostsSet;
+    QComboBox* hostSortCombBox;
 
     ParamService* paramService;
     QJsonObject ConfJson;
     QFile* configFile;
-    QListWidget* logWidget;
-    QTabWidget* tableTabWidget;
-    int updateTimerID;
-    bool logToFileFlag;
 
+    int updateTimerID;
     void makeStatusBar();
     QToolBar* CreateToolbar();
     QGroupBox* makeParamSetGroupBox();
     QTabWidget *makeTabs();
     QListWidget* logWidgetConfig();
-    QCheckBox* logToFile;
     void openFileLoadConfig();
     void AddToLog(const QString &string, bool isError = false);
     void closeEvent(QCloseEvent *event) override;
     void saveAll();
     void saveMainWindowSettings();
     void loadMainWindowSettings();
+    void updateHostsSet();
 };
 #endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H
