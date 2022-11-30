@@ -51,9 +51,9 @@ add_executable(${PROJECT_NAME}
         ${SOURCE_FILES}
         )
 
-
 IF(CMAKE_BUILD_TYPE MATCHES Release)
     message("Release build!")
+    set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE true)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/saved_params.json ${CMAKE_CURRENT_BINARY_DIR}/saved_params.json COPYONLY)
     add_custom_command(
             TARGET ${PROJECT_NAME} PRE_BUILD

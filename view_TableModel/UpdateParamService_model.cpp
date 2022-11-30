@@ -84,6 +84,7 @@ QVariant UpdateParamService_model::GetDisplayRoleData(const QModelIndex& index, 
         case PARAM_ID: {
             QString value = QString("0x%1").arg(data->geParamId(), 0, 16);
             value.append(QString("(from:0x%1)").arg(data->getHostID(),0, 16));
+            if (data->getAltName() == " ") return value;
             if (data->getAltName().length())
                 value = value.prepend(data->getAltName() + "(").append(")");
             return value;
