@@ -48,6 +48,7 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     mainLayout->addWidget(makeTabs());
     mainLayout->addWidget(makeParamSetGroupBox());
     mainLayout->addWidget(logWidgetConfig());
+    checkServicesConnection();
 
     connect(updateParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
     connect(updateParamsTab, &UpdateParamsTab::addedParamSig, [this](uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType){
@@ -81,23 +82,23 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
         AddToLog(QString("Failed to write param in DataBase - please reconnect in setting and uncheck logToFile if needed to return in normal mode \n Log to file now is on! "),true);
         checkServicesConnection();
     });
-    connect(paramService, &ParamService::errorInDBToLog, [this](const QString& errorStr){ AddToLog(errorStr,true);});
+    connect(paramService, &ParamService::errorInDBToLog, [this](const QString& errorStr){
+        AddToLog(errorStr,true);
+        checkServicesConnection();
+    });
     connect(paramService, &ParamService::eventInDBToLog, [this](const QString& eventStr){ AddToLog(eventStr);});
     connect(settingsDlg, &Settings_dlg::eventInSettings, [this](const QString& str, bool err){
         AddToLog(str, err);
         checkServicesConnection();
     });
-
-    connect(settingsDlg, SIGNAL(settingsDialogClosed()), this, SLOT(checkServicesConnection()));
-    checkServicesConnection();
-//  updateTimerID = startTimer(300);
 }
 
 QGroupBox* MainWindow::makeParamSetGroupBox(){
     auto* addParamGroupBox = new QGroupBox(tr("Some settings here"), this);
-    addParamGroupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+//    addParamGroupBox->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
 
     auto* searchGroupBoxLayout = new QHBoxLayout(addParamGroupBox);
+    searchGroupBoxLayout->setSpacing(10);
     addParamGroupBox->setLayout(searchGroupBoxLayout);
 
     auto* makeEvent = new QPushButton("Make Event");
@@ -124,13 +125,18 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
     });
 
     auto selfAddrLabel = new QLabel("Self Address: ", this);
+    selfAddrLabel->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::Label));
     auto selfAddr = new QLineEdit( this);
     selfAddr->setText(QString("%1").arg(paramService->getSelfAddr(),0,16));
+    selfAddr->setMaximumSize(50,500);
+    selfAddr->setAlignment(Qt::AlignCenter);
+    selfAddr->setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Fixed,QSizePolicy::LineEdit));
     connect(selfAddr, &QLineEdit::textChanged, [this](const QString& newSelfAddr){
         paramService->setSelfAddr(newSelfAddr.toInt(nullptr,16));
     });
 
-    auto sortByHostLabel = new QLabel("Sort all tabs by host 0x: ", this);
+    auto sortByHostLabel = new QLabel("Sort all tabs by host 0x", this);
+    sortByHostLabel->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::Label));
     hostSortCombBox = new QComboBox(this);
     hostSortCombBox->setEditable(false);
     updateHostsSet();
@@ -139,11 +145,6 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
         setParamsTab->getModel()->update(IParamService_model::RESET_TASK);
         updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
     });
-
-//    makeEvent->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
-//    logToFile->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
-//    selfAddr->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
-//    hostSortCombBox->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
 
     makeEvent->setEnabled(true);
     searchGroupBoxLayout->addWidget(makeEvent);
@@ -231,6 +232,11 @@ void MainWindow::openFileLoadConfig() {
     logWidget->setStyleSheet(styleFile.readAll());
     styleFile.close();
 
+    styleFile.setFileName(QCoreApplication::applicationDirPath() + QString("%1/qss/main.css").arg(pathToFile));
+    styleFile.open(QIODevice::ReadOnly);
+    this->setStyleSheet(styleFile.readAll());
+    styleFile.close();
+
     styleFile.setFileName(QCoreApplication::applicationDirPath() + QString("%1/qss/toolbar.css").arg(pathToFile));
     styleFile.open(QIODevice::ReadOnly);
     Toolbar->setStyleSheet(styleFile.readAll());
@@ -268,8 +274,9 @@ void MainWindow::OnClickedTableCell(const QModelIndex &index) {
         auto* removeBtn = new QPushButton("Remove");
         label->setAlignment(Qt::AlignHCenter);
         layout->addRow(label);
-        if(param->getParamType()==UPDATE) layout->addWidget(moveBtn);
         layout->addWidget(removeBtn);
+        if(param->getParamType()==UPDATE)
+            layout->addWidget(moveBtn);
         dlg.setLayout(layout);
         connect(moveBtn, &QPushButton::clicked, [this, mapKey, &dlg]() {
             paramService->moveUpdateToSet(mapKey);
@@ -300,7 +307,7 @@ void MainWindow::saveMainWindowSettings(){
 void MainWindow::loadMainWindowSettings(){
     auto confObject = ConfJson.value("MainWindow_Conf");
     paramService->setSelfAddr(confObject["SelfAddr"].toInt());
-    paramService->setWriteToFile(confObject["WriteToFile"].toBool());
+//    paramService->setWriteToFile(confObject["WriteToFile"].toBool());//todo check about this
 }
 
 void MainWindow::saveAll(){
@@ -333,24 +340,20 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 void MainWindow::checkServicesConnection(){
-    if(paramService->isSocketConnected())
-        serverLabel->setStyleSheet("color : green");
-    else
-        serverLabel->setStyleSheet("color : red");
-    if(paramService->getDbDriver().isDBOk())
-        dbLabel->setStyleSheet("color : green");
-    else
-        dbLabel->setStyleSheet("color : red");
+    updateServiceLabel(serverLabel, paramService->isSocketConnected());
+    updateServiceLabel(dbLabel, paramService->isDataBaseOk());
+}
+
+inline void MainWindow::updateServiceLabel(QLabel* label, bool status){
+    status ? label->setStyleSheet("color : green") : label->setStyleSheet("color : red");
 }
 
 void MainWindow::AddToLog(const QString& string, bool isError)
 {
     if(string.isEmpty()) return;
     logWidget->addItem(QTime::currentTime().toString("HH:mm:ss:zzz").append(" : ").append(string));
-    if (isError)
-        logWidget->item(logWidget->count() - 1)->setForeground(QBrush(QColor("red")));
-    else
-        logWidget->item(logWidget->count() - 1)->setForeground(QBrush(QColor("green")));
+    logWidget->item(logWidget->count() - 1)->
+            setForeground(isError ? QBrush(QColor("red")) : QBrush(QColor("green")));
 }
 
 void MainWindow::OnChangedValueTableCell(const QModelIndex& index) {

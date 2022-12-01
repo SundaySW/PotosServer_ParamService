@@ -14,6 +14,7 @@ public:
     std::function<void(const QString&)> eventInDBDriver;
     explicit PSQL_Driver(QJsonObject &conf);
     bool setConnection();
+    bool isAutoConnect() const;
     void closeConnection();
     bool writeParam(const ParamItem &param, const QString &event = "");
     void writeEvent(const QString &eventStr);

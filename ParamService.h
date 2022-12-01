@@ -28,6 +28,7 @@ public:
     void saveParams();
     void loadParams();
     bool isSocketConnected();
+    bool isDataBaseOk();
     PSQL_Driver& getDbDriver();
     QList<ParamItem *>& getPtrList(ParamItemType type);
     SocketAdapter& getSocketAdapter();
@@ -80,5 +81,7 @@ private:
     void setParamEvent(const QString &mapKey);
     void sendProtosMsgSetParam(const QString &mapKey);
     void processSetParamReq(const QString &mapKey);
+    void manageTimersinUpdate(const QString &mapKey, uchar msgType, int updateRate, int paramType);
+
 };
 #endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H

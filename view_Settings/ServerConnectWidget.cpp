@@ -6,7 +6,7 @@
 #include <QtWidgets/QLabel>
 #include "ServerConnectWidget.h"
 #include "QJsonObject"
-
+#define CHECK_CONNECTION_TIME   2900
 ServerConnectWidget::ServerConnectWidget(SocketAdapter& socket, QJsonObject& JsonConf)
     : AddrEdit(new QLineEdit("127.0.0.5",this))
     , PortEdit(new QLineEdit("3699", this))
@@ -30,31 +30,41 @@ ServerConnectWidget::ServerConnectWidget(SocketAdapter& socket, QJsonObject& Jso
     layout->addWidget(statusLabel);
     updateView();
     connect(connectBtn, &QPushButton::clicked, [this]() {
-        QString eventStr;
-        bool isError = false;
-        if(Socket.IsConnected())
+        if(Socket.IsConnected()) {
             Socket.Disconnect(1000);
-        else{
+            checkConnectTimer->stop();
+            emit eventInServerConnection("Disconnected from server by user", false);
+        }else{
             Save();
-            if(!connectToSocket()){
-                statusLabel->setText("Error on connect to Protos Server");
-                statusLabel->setStyleSheet("color:red");
-                eventStr = QString("Event is server connection: cant connect to sever ip:%1 pot:%2").arg(AddrEdit->text()).arg(PortEdit->text());
-                isError = true;
-                return;
-            }else
-                eventStr = QString("Event is server connection: connected to sever ip:%1 pot:%2").arg(AddrEdit->text()).arg(PortEdit->text());
+            if(connectToSocket()) startCheckConnectionTimer();
         }
-        emit eventInServerConnection(eventStr, isError);
         updateView();
     });
     this->setLayout(layout);
+    checkConnectTimer = new QTimer(this);
+    connect(checkConnectTimer, &QTimer::timeout, [this]() {
+        checkConnectTimerFinished();
+    });
+    startCheckConnectionTimer();
 }
 
 bool ServerConnectWidget::connectToSocket(){
     QString SocketIp   = AddrEdit->text();
     QString SocketPort = PortEdit->text();
-    return Socket.Connect(SocketIp, SocketPort.toInt(), 1000);
+    bool isConnected = Socket.Connect(SocketIp, SocketPort.toInt(), 1000);
+    QString eventStr;
+    bool isError = false;
+    if(isConnected){
+        eventStr = QString("Event is server connection: connected to sever ip:%1 pot:%2").arg(AddrEdit->text()).arg(PortEdit->text());
+        countOfReconnect = 0;
+    }else
+    {
+        eventStr = QString("Event is server connection: cant connect to sever ip:%1 pot:%2").arg(AddrEdit->text()).arg(PortEdit->text());
+        isError = true;
+    }
+    updateView();
+    emit eventInServerConnection(eventStr, isError);
+    return isConnected;
 }
 
 void ServerConnectWidget::Set()
@@ -89,4 +99,19 @@ void ServerConnectWidget::updateView(){
 void ServerConnectWidget::setEditsStateDisabled(bool state){
     AddrEdit->setDisabled(state);
     PortEdit->setDisabled(state);
+}
+
+void ServerConnectWidget::checkConnectTimerFinished(){
+    if(Socket.IsConnected()) return;
+    countOfReconnect++;
+    emit eventInServerConnection(QString("Server found disconnected - now making %1 of %2 attempt to connect").arg(countOfReconnect).arg(MAX_COUNT_OF_RECONNECT), true);
+    connectToSocket();
+    if(countOfReconnect == MAX_COUNT_OF_RECONNECT) {
+        checkConnectTimer->stop();
+        emit eventInServerConnection(QString("Cant reconnect, no more auto connections - please use settings dialog to connect to server").arg(countOfReconnect), true);
+    }
+}
+void ServerConnectWidget::startCheckConnectionTimer(){
+    countOfReconnect = 0;
+    checkConnectTimer->start(CHECK_CONNECTION_TIME);
 }

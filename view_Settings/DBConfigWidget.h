@@ -30,10 +30,10 @@ private:
     QLineEdit* HostName, *DatabaseName, *UserName, *Password, *Port;
     QCheckBox* autoconnect;
     QPushButton* connectBtn;
+    QPushButton* saveBtn;
     QLabel* statusLabel;
     QJsonObject& savedConf;
     PSQL_Driver& dbDriver;
-
     void setEditsStateDisabled(bool state);
     void updateView();
 };

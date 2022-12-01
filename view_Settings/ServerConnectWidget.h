@@ -13,7 +13,7 @@
 #include <QtWidgets/QLabel>
 #include "QJsonObject"
 #include "QCheckBox"
-
+#define MAX_COUNT_OF_RECONNECT  3
 class ServerConnectWidget : public QWidget
 {
     Q_OBJECT
@@ -30,10 +30,13 @@ private:
     QPushButton* connectBtn;
     QLabel* statusLabel;
     QJsonObject& savedConf;
-
+    QTimer* checkConnectTimer;
+    int countOfReconnect = 0;
     bool connectToSocket();
     void setEditsStateDisabled(bool state);
     void updateView();
+    void checkConnectTimerFinished();
+    void startCheckConnectionTimer();
 };
 
 

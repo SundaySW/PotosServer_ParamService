@@ -1,0 +1,9 @@
+QGroupBox QLabel{
+    color: gray;
+    font-weight: bold;
+    padding: 3px;
+}
+QStatusBar QLabel{
+    font-weight: bold;
+    padding: 5px;
+}

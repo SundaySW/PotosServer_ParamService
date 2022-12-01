@@ -12,12 +12,28 @@ ParamItem::ParamItem(uchar incomeID, uchar hostAddr, ParamItemType type)
     Note(("")),
     paramType(type),
     expectedValue(""),
-    lastValueType(type==SET?ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS),
-    writeToDB(false),
+    lastValueType(type==SET ? ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS),
+    writeToDB(type == SET),
     state(OFFLINE)
-{
-    writeToDB = type == SET;
-    lastValueType = type == SET ? ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS;
+{}
+
+ParamItem::ParamItem(const ProtosMessage &message, ParamItemType type){
+    ID = message.GetParamId();
+    if(type == SET)
+        Host_ID = message.GetDestAddr();
+    else Host_ID = message.GetSenderAddr();
+    Dest_ID = message.GetDestAddr();
+    Sender_ID = message.GetSenderAddr();
+    altName = "";
+    Value = message.GetParamFieldValue();
+    expectedValue = message.GetParamFieldValue();
+    Note = "";
+    writeToDB = (type == SET);
+    paramType = UPDATE; //todo check about it
+    state = ONLINE;
+//    state = (type == SET) ? PENDING : OFFLINE;
+    lastValueTime = QDateTime::currentDateTime();
+    lastValueType = (ProtosMessage::MsgTypes)message.MsgType;
 }
 
 ParamItem::ParamItem(QJsonObject& obj){
@@ -52,25 +68,6 @@ QJsonObject ParamItem::getJsonObject() {
     retVal["dateTime"] = lastValueTime.toString();
     retVal["LastValueType"] = lastValueType;
     return retVal;
-}
-
-ParamItem::ParamItem(const ProtosMessage &message, ParamItemType type) {
-    ID = message.GetParamId();
-    if(type == SET)
-        Host_ID = message.GetDestAddr();
-    else Host_ID = message.GetSenderAddr();
-    Dest_ID = message.GetDestAddr();
-    Sender_ID = message.GetSenderAddr();
-    altName = "";
-    Value = message.GetParamFieldValue();
-    expectedValue = message.GetParamFieldValue();
-    Note = "";
-    writeToDB = (type == SET);
-    paramType = UPDATE; //todo check about it
-    state = ONLINE;
-//    state = (type == SET) ? PENDING : OFFLINE;
-    lastValueTime = QDateTime::currentDateTime();
-    lastValueType = (ProtosMessage::MsgTypes)message.MsgType;
 }
 
 void ParamItem::update(const ProtosMessage &message){
@@ -116,7 +113,7 @@ QString ParamItem::getTableInsertValues(const QString &eventStr) const {
 }
 
 QString ParamItem::getLogToFileHead() {
-    return "=Time_Stamp=Host_ID=Param_id=Value=Type=Sender/Dest_ID=Note\n";
+    return "Time_Stamp,Host_ID,Param_id,Value,Type,Sender/Dest_ID,Note\n";
 }
 
 QString ParamItem::getLogToFileStr(const QString &eventStr) {
@@ -207,14 +204,6 @@ void ParamItem::setAltName(const QString& name) {
 
 const QString& ParamItem::getAltName() {
     return altName;
-}
-
-int ParamItem::getTimerId() const {
-    return timerID;
-}
-
-void ParamItem::setTimerId(int timerId) {
-    timerID = timerId;
 }
 
 int ParamItem::getUpdateRate() const {

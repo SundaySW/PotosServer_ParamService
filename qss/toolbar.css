@@ -6,6 +6,7 @@ QToolBar{
 }
 QToolBar QWidget{
     padding: 5px;
+    margin: 5px;
     font-weight: bold;
     color: gray;
 }

@@ -86,7 +86,6 @@ private:
     ParamItemType paramType;
     bool writeToDB;
     int updateRate = 5000;
-    int timerID;
 };
 
 #endif //POTOSSERVER_PARAMSERVICE_PARAMITEM_H

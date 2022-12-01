@@ -27,7 +27,6 @@ class Settings_dlg : public QDialog
 public:
     Settings_dlg(ParamService* paramService, QJsonObject&, QWidget *parent = nullptr);
 signals:
-    void settingsDialogClosed();
     void eventInSettings(const QString&, bool);
 private:
     QTabWidget* tabWidget;

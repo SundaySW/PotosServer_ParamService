@@ -17,13 +17,14 @@
 ParamService::ParamService(QJsonObject &inJson) :
         qJsonObject(inJson),
         dbDriver(PSQL_Driver(inJson)),
-        logFile(new QFile())
+        logFile(new QFile()),
+        writeToFile(false)
 {
     dbDriver.errorInDBDriver = [this](const QString& errorStr){ errorInDBToLog(errorStr);};
     dbDriver.eventInDBDriver = [this](const QString& eventStr){ eventInDBToLog(eventStr);};
     socketAdapter.AddTxMsgHandler([this](const ProtosMessage& txMsg) { txMsgHandler(txMsg);});
     socketAdapter.AddRxMsgHandler([this](const ProtosMessage& txMsg) { rxMsgHandler(txMsg);});
-    dbDriver.setConnection();
+    if(dbDriver.isAutoConnect()) dbDriver.setConnection();
     loadParams();
 }
 
@@ -55,19 +56,37 @@ bool ParamService::updateParam(const ProtosMessage &message, const QString &mapK
     if(dataMap.contains(mapKey)){
         auto& paramToUpdate = dataMap[mapKey];
         paramToUpdate.update(message);
-        auto paramType = paramToUpdate.getParamType();
-        auto msgType = message.MsgType;
-        if(timerMap.contains(mapKey)){
-            if(paramType == SET && msgType == ProtosMessage::PANS)
-                timerMap[mapKey]->stop();
-            else
-                timerMap[mapKey]->start(paramToUpdate.getUpdateRate());
-        }
         writeParamToDB(mapKey);
-        emit changedParamState(paramType);
+        emit changedParamState(paramToUpdate.getParamType());
+        manageTimersinUpdate(mapKey, message.MsgType, paramToUpdate.getUpdateRate(), paramToUpdate.getParamType());
         return true;
     }
     return false;
+}
+
+void ParamService::manageTimersinUpdate(const QString &mapKey, uchar msgType, int updateRate, int paramType) {
+    if(timerMap.contains(mapKey)){
+        switch (paramType) {
+            case SET:
+                switch(msgType){
+                    case ProtosMessage::PSET:
+                        timerMap[mapKey]->start(updateRate);
+                        processSetParamReq(mapKey);
+                        break;
+                    case ProtosMessage::PANS:
+                        timerMap[mapKey]->stop();
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case UPDATE:
+                timerMap[mapKey]->start(updateRate);
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void ParamService::moveUpdateToSet(const QString &mapKey) {
@@ -193,6 +212,10 @@ bool ParamService::isSocketConnected(){
     return socketAdapter.IsConnected();
 }
 
+bool ParamService::isDataBaseOk(){
+    return dbDriver.isDBOk();
+}
+
 void ParamService::setParamEvent(const QString &mapKey){
     auto& paramToWrite = dataMap[mapKey];
     auto senderId = paramToWrite.getSenderId() == selfAddr ? "localHost" : QString("%1").arg(paramToWrite.getSenderId(),0,16).toUpper().prepend("0x");
@@ -213,7 +236,6 @@ void ParamService::rxMsgHandler(const ProtosMessage &message) {
             mapKey = makeMapKey(message.GetDestAddr(), message.GetParamId());
             if(!updateParam(message, mapKey))
                 addParam(std::move(ParamItem(message, SET)));
-            processSetParamReq(mapKey);
             break;
         default:
             break;

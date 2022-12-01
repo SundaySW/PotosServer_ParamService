@@ -17,7 +17,7 @@ Settings_dlg::Settings_dlg(ParamService* paramService, QJsonObject& cfg, QWidget
     auto pServerConnectWidget = new ServerConnectWidget(paramService->getSocketAdapter(), cfg);
     auto pDbConfigWidget = new DBConfigWidget(cfg, paramService->getDbDriver());
     tabWidget->addTab(pServerConnectWidget, "Server");
-    tabWidget->addTab(pDbConfigWidget, "DB");
+    tabWidget->addTab(pDbConfigWidget, "DataBase");
     auto *gridLayout = new QGridLayout;
     gridLayout->addWidget(tabWidget);
     mainLayout->addLayout(gridLayout);
@@ -27,6 +27,5 @@ Settings_dlg::Settings_dlg(ParamService* paramService, QJsonObject& cfg, QWidget
 }
 void Settings_dlg::closeEvent(QCloseEvent *event)
 {
-    emit settingsDialogClosed();
     close();
 }

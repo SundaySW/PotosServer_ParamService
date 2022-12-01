@@ -12,6 +12,7 @@ DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDrive
         , Port(new QLineEdit(this))
         , autoconnect(new QCheckBox(this))
         , connectBtn(new QPushButton( this))
+        , saveBtn(new QPushButton("Save",this))
         , statusLabel(new QLabel("", this))
         , savedConf(JsonConf)
         , dbDriver(databaseDriver)
@@ -30,6 +31,7 @@ DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDrive
     layout->addRow(QString("Port"), Port);
     layout->addRow(QString("Auto connect"), autoconnect);
     layout->addWidget(connectBtn);
+    layout->addWidget(saveBtn);
     layout->addRow(statusLabel);
     updateView();
     connect(connectBtn, &QPushButton::clicked, [this](){
@@ -46,6 +48,7 @@ DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDrive
         emit eventInServerConnection("", false);
         updateView();
     });
+    connect(saveBtn, &QPushButton::clicked, [this](){Save();});
     this->setLayout(layout);
 }
 
@@ -70,6 +73,7 @@ void DBConfigWidget::setEditsStateDisabled(bool state){
     Password->setDisabled(state);
     Port->setDisabled(state);
     autoconnect->setDisabled(state);
+    saveBtn->setDisabled(state);
 }
 
 void DBConfigWidget::Save() {

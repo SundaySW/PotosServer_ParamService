@@ -8,7 +8,11 @@
 
 PSQL_Driver::PSQL_Driver(QJsonObject& conf)
         :config(conf)
-{}
+        ,inError(false)
+        ,connected(false)
+{
+    configUpdate();
+}
 
 bool PSQL_Driver::setConnection() {
     bool result;
@@ -47,8 +51,6 @@ void PSQL_Driver::loadTableNames(){
     while (query.next())
         tableNames.insert(query.value(0).toString());
 }
-
-
 
 bool PSQL_Driver::hasTable(const QString& tableName){
     return tableNames.contains(tableName);
@@ -114,7 +116,7 @@ bool PSQL_Driver::createEventsTable(const QString& tableName){
     QString columns(
             "n SERIAL PRIMARY KEY,"
             " DateTime TIMESTAMP,"
-            " Event VARCHAR (255)"
+            " Event VARCHAR (100)"
     );
     QString queryStr = QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(tableName).arg(columns);
     bool result = sendReq(queryStr);
@@ -173,4 +175,8 @@ void PSQL_Driver::throwEventToLog(const QString& str){
 
 void PSQL_Driver::throwErrorToLog(const QString& str){
     errorInDBDriver("Error in DB: " + str);
+}
+
+bool PSQL_Driver::isAutoConnect() const {
+    return autoConnect;
 }

@@ -29,7 +29,6 @@ public:
 private slots:
     void OnClickedTableCell(const QModelIndex &index);
     void OnChangedValueTableCell(const QModelIndex&);
-    void checkServicesConnection();
     void OnlyInDBShow(bool);
     void OnlyOnlineShow(bool);
 protected:
@@ -54,7 +53,6 @@ private:
     QJsonObject ConfJson;
     QFile* configFile;
 
-    int updateTimerID;
     void makeStatusBar();
     QToolBar* CreateToolbar();
     QGroupBox* makeParamSetGroupBox();
@@ -67,5 +65,7 @@ private:
     void saveMainWindowSettings();
     void loadMainWindowSettings();
     void updateHostsSet();
+    inline void updateServiceLabel(QLabel *label, bool status);
+    void checkServicesConnection();
 };
 #endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H
