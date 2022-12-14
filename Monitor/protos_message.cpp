@@ -525,6 +525,22 @@ ProtosMessage& ProtosMessage::SetParamValue(int intValue, uchar paramId, ProtosM
 	return *this;
 }
 
+void ProtosMessage::SetParamValue(short shortValue, bool ok)
+{
+    if(!ok) return;
+    Dlc	= 6;
+    ParamFieldType = ParamFieldTypes::SHORT;
+    LongField = shortValue;
+}
+
+void ProtosMessage::SetParamValue(float floatValue, bool ok)
+{
+    if(!ok) return;
+    Dlc	= 6;
+    ParamFieldType = ParamFieldTypes::FLOAT;
+    FloatField = floatValue;
+}
+
 ProtosMessage& ProtosMessage::SetParamValue(float floatValue, uchar paramId, ProtosMessage::MsgTypes msgType, uchar destAddr, uchar senderAddr)
 {
 	SetCanIdFields(msgType, destAddr, senderAddr);

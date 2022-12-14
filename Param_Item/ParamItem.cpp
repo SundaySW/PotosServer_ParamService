@@ -50,6 +50,7 @@ ParamItem::ParamItem(QJsonObject& obj){
     state = ParamItemStates(obj["state"].toInt());
     lastValueTime = QDateTime::fromString(obj["dateTime"].toString());
     lastValueType = static_cast<ProtosMessage::MsgTypes>(obj["LastValueType"].toInt());
+    updateRate = obj["UpdateRate"].toInt();
 }
 
 QJsonObject ParamItem::getJsonObject() {
@@ -67,6 +68,7 @@ QJsonObject ParamItem::getJsonObject() {
     retVal["state"] = static_cast<int>(state);
     retVal["dateTime"] = lastValueTime.toString();
     retVal["LastValueType"] = lastValueType;
+    retVal["UpdateRate"] = updateRate;
     return retVal;
 }
 
@@ -120,7 +122,7 @@ QString ParamItem::getLogToFileStr(const QString &eventStr) {
     return QString("%1,%2,%3,%4,%5,%6,%7\n")
         .arg(QDateTime::currentDateTime().toString(QString("yyyy.MM.dd_hh.mm.ss")))
         .arg(getHostID(),0,16)
-        .arg(geParamId(),0,16)
+        .arg(getParamId(), 0, 16)
         .arg(Value.toString())
         .arg(ProtosMessage::GetMsgTypeName(lastValueType))
         .arg(lastValueType==ProtosMessage::PANS? Dest_ID : Sender_ID)
@@ -133,7 +135,7 @@ QString ParamItem::getTableName() const{
     return QString("param_%1_host_%2").arg(id_part).arg(host_part);
 }
 
-uchar ParamItem::geParamId() const {
+uchar ParamItem::getParamId() const {
     return ID;
 }
 
@@ -202,7 +204,7 @@ void ParamItem::setAltName(const QString& name) {
     altName = name;
 }
 
-const QString& ParamItem::getAltName() {
+QString ParamItem::getAltName() const {
     return altName;
 }
 
@@ -247,4 +249,8 @@ ProtosMessage::MsgTypes ParamItem::getLastValueType() const {
 
 uchar ParamItem::getDestId() const {
     return Dest_ID;
+}
+
+void ParamItem::setUpdateRate(short _updateRate) {
+    updateRate = _updateRate;
 }

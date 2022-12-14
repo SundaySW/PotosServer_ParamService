@@ -5,10 +5,11 @@
 #ifndef POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H
 #define POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H
 
-#include <DB_Driver/PSQL_Driver.h>
+#include <PSQL_Driver.h>
 #include <QtCore/QTimer>
-#include <Monitor/socket_adapter.h>
+#include <socket_adapter.h>
 #include <IParamService_model.h>
+#include <ConfigParamDlg.h>
 #include "QJsonObject"
 #include "QJsonArray"
 #include "QJsonDocument"
@@ -22,7 +23,7 @@ public:
 
     bool addParam(ParamItem &&paramItem, bool addToDB=true);
     bool addParam(uchar, uchar, ParamItemType);
-    bool removeParam(const ParamItem &incomeParam);
+    bool removeParam(const QString&);
     bool updateParam(const ProtosMessage &message, const QString &mapKey);
     void configureTimer(int);
     void saveParams();
@@ -40,12 +41,15 @@ public:
     void sortUpdateParamListAboutDB(bool);
     void sortUpdateListAboutOnline(bool);
     void sortAllParamsAboutHost(const QString &host);
+    void sortByParamID(ParamItemType);
+    void sortByHostID(ParamItemType);
     void setSelfAddr(uchar selfAddr);
     void setWriteToFile(bool writeToFile);
     bool isWriteToFile() const;
     void moveUpdateToSet(const QString &mapKey);
     uchar getSelfAddr() const;
     void closeAll();
+    void configParam(const QString &mapKey);
     QSet<uchar> getAllHostsInSet();
 signals:
     void changedParamState(ParamItemType);
@@ -55,6 +59,7 @@ signals:
     void errorInDBToLog(const QString&);
     void eventInDBToLog(const QString&);
 private slots:
+    void onNewConfigDlgMsg(ProtosMessage &message);
     void writeTimerUpdate();
 private:
     uchar selfAddr;
@@ -62,6 +67,8 @@ private:
     QList<ParamItem*> ptrListUpdate;
     QList<ParamItem*> ptrListSet;
     QMap<QString, QTimer*> timerMap;
+    QMap<QString,ConfigParamDlg*> configParamDlgMap;
+
     QTimer* tim1;
     PSQL_Driver dbDriver;
     QTimer* writeTimer;
@@ -83,5 +90,10 @@ private:
     void processSetParamReq(const QString &mapKey);
     void manageTimersinUpdate(const QString &mapKey, uchar msgType, int updateRate, int paramType);
 
+    void processPANSMsg(const ProtosMessage &message);
+
+    void removeFromAllMaps(const QString &mapKey);
+
+    void updateParamUpdateRate(const QString &mapKey, const QVariant &value);
 };
 #endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H

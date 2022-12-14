@@ -117,17 +117,26 @@ QString ParamService::makeMapKey(uchar host, uchar ID){
 }
 
 QString ParamService::makeMapKey(const ParamItem& paramItem){
-    return QString("%1_%2").arg(paramItem.geParamId(), 0, 16).arg(paramItem.getHostID(), 0, 16);
+    return QString("%1_%2").arg(paramItem.getParamId(), 0, 16).arg(paramItem.getHostID(), 0, 16);
 }
 
-bool ParamService::removeParam(const ParamItem &incomeParam) {
-    auto mapKey = makeMapKey(incomeParam);
+bool ParamService::removeParam(const QString& mapKey) {
     if(!dataMap.contains(mapKey)) return false;
     auto removedType = dataMap[mapKey].getParamType();
-    dataMap.remove(mapKey);
-    if(timerMap.contains(mapKey)) timerMap.remove(mapKey);
+    removeFromAllMaps(mapKey);
     setPtrListFromMap(removedType);
     return true;
+}
+
+void ParamService::removeFromAllMaps(const QString& mapKey){
+    if(dataMap.contains(mapKey))
+        dataMap.remove(mapKey);
+    if(configParamDlgMap.contains(mapKey)) {
+        configParamDlgMap.value(mapKey)->setAttribute(Qt::WA_DeleteOnClose);
+        configParamDlgMap.value(mapKey)->close();
+        configParamDlgMap.remove(mapKey);
+    }
+    if(timerMap.contains(mapKey)) timerMap.remove(mapKey);
 }
 
 void ParamService::writeParamToDB(const QString &mapKey, const QString &event){
@@ -224,13 +233,11 @@ void ParamService::setParamEvent(const QString &mapKey){
     logEventToDB(eventStr);
 }
 
-void ParamService::rxMsgHandler(const ProtosMessage &message) {
+void ParamService::rxMsgHandler(const ProtosMessage &message){
     QString mapKey;
     switch (message.MsgType){
         case ProtosMessage::MsgTypes::PANS:
-            mapKey = makeMapKey(message.GetSenderAddr(), message.GetParamId());
-            if(!updateParam(message, mapKey))
-                addParam(std::move(ParamItem(message, UPDATE)));
+            processPANSMsg(message);
             break;
         case ProtosMessage::MsgTypes::PSET:
             mapKey = makeMapKey(message.GetDestAddr(), message.GetParamId());
@@ -242,23 +249,56 @@ void ParamService::rxMsgHandler(const ProtosMessage &message) {
     }
 }
 
+void ParamService::processPANSMsg(const ProtosMessage& message){
+    QString mapKey = makeMapKey(message.GetSenderAddr(), message.GetParamId());
+    switch (message.ParamField) {
+        case ProtosMessage::VALUE:
+            if(!updateParam(message, mapKey))
+                addParam(std::move(ParamItem(message, UPDATE)));
+            break;
+        case ProtosMessage::UPDATE_RATE:
+        case ProtosMessage::CTRL_RATE:
+            updateParamUpdateRate(mapKey, message.GetParamFieldValue());
+        case ProtosMessage::SEND_TIME:
+        case ProtosMessage::UPDATE_TIME:
+        case ProtosMessage::SEND_RATE:
+        case ProtosMessage::CTRL_TIME:
+        case ProtosMessage::MULT:
+        case ProtosMessage::OFFSET:
+            if(configParamDlgMap.contains(mapKey))
+                configParamDlgMap[mapKey]->processAns(message);
+            break;
+        default:
+            break;
+    }
+}
+
+void ParamService::updateParamUpdateRate(const QString& mapKey, const QVariant& value){
+    bool ok;
+    short newUpdateRateValue = value.toInt(&ok);
+    if(ok){
+        if(dataMap.contains(mapKey))
+            dataMap[mapKey].setUpdateRate(newUpdateRateValue);
+        if(timerMap.contains(mapKey))
+            timerMap.value(mapKey)->setInterval(newUpdateRateValue);
+    }
+}
+
 void ParamService::txMsgHandler(const ProtosMessage &message) {
 
 }
 
 void ParamService::setPtrListFromMap(ParamItemType type){
-    QList<ParamItem*>* list;
-    if(type == ParamItemType::UPDATE) list = &ptrListUpdate;
-    else if(type == ParamItemType::SET) list = &ptrListSet;
-    else return;
-    list->clear();
+    QList<ParamItem*> tmpList;
     auto it = dataMap.begin();
     auto end = dataMap.end();
     while(it != end){
         if(it.value().getParamType() == type)
-            list->append(&it.value());
+            tmpList.append(&it.value());
         it++;
     }
+    if(type == ParamItemType::UPDATE) tmpList.swap(ptrListUpdate);
+    else if(type == ParamItemType::SET) tmpList.swap(ptrListSet);
 }
 
 void ParamService::setParamValueChanged(int listPosition, const QVariant& value){
@@ -279,41 +319,43 @@ void ParamService::setParamValueChanged(int listPosition, const QVariant& value)
 
 void ParamService::processSetParamReq(const QString& mapKey){
     auto& param = dataMap[mapKey];
-    ProtosMessage msg(param.getHostID(), selfAddr, param.geParamId(), ProtosMessage::MsgTypes::PREQ, ProtosMessage::ParamFields::VALUE);
+    ProtosMessage msg(param.getHostID(), selfAddr, param.getParamId(), ProtosMessage::MsgTypes::PREQ, ProtosMessage::ParamFields::VALUE);
     socketAdapter.SendMsg(msg);
 }
 
 void ParamService::sendProtosMsgSetParam(const QString &mapKey) {
     auto& param = dataMap[mapKey];
-    ProtosMessage msg(param.getHostID(), selfAddr, param.geParamId(), short(param.getValue().toInt()), ProtosMessage::MsgTypes::PSET);
+    ProtosMessage msg(param.getHostID(), selfAddr, param.getParamId(), short(param.getValue().toInt()), ProtosMessage::MsgTypes::PSET);
     socketAdapter.SendMsg(msg);
 }
 
 void ParamService::sortUpdateParamListAboutDB(bool arg){
-    ptrListUpdate.clear();
+    QList<ParamItem*> TMPptrListUpdate;
     for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
         if(it.value().getParamType() == UPDATE){
-            if(!arg) ptrListUpdate.append(&it.value());
+            if(!arg) TMPptrListUpdate.append(&it.value());
             else if(it.value().isWriteToDb())
-                ptrListUpdate.append(&it.value());
+                TMPptrListUpdate.append(&it.value());
         }
     }
+    TMPptrListUpdate.swap(ptrListUpdate);
 }
 
 void ParamService::sortUpdateListAboutOnline(bool arg) {
-    ptrListUpdate.clear();
+    QList<ParamItem*> TMPptrListUpdate;
     for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
         if(it.value().getParamType() == UPDATE){
-            if(!arg) ptrListUpdate.append(&it.value());
+            if(!arg) TMPptrListUpdate.append(&it.value());
             else if(it.value().getState() == ONLINE)
-                ptrListUpdate.append(&it.value());
+                TMPptrListUpdate.append(&it.value());
         }
     }
+    TMPptrListUpdate.swap(ptrListUpdate);
 }
 
 void ParamService::sortAllParamsAboutHost(const QString &hostString) {
-    ptrListUpdate.clear();
-    ptrListSet.clear();
+    QList<ParamItem*> TMPptrListUpdate;
+    QList<ParamItem*> TMPptrListSet;
     bool needToSort;
     uchar host = hostString.toShort(&needToSort,16);
     for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
@@ -321,10 +363,12 @@ void ParamService::sortAllParamsAboutHost(const QString &hostString) {
         auto paramHostID = it.value().getHostID();
         if(paramHostID != host && needToSort) continue;
         if(paramType == UPDATE)
-            ptrListUpdate.append(&it.value());
+            TMPptrListUpdate.append(&it.value());
         else if(paramType == SET)
-            ptrListSet.append(&it.value());
+            TMPptrListSet.append(&it.value());
     }
+    TMPptrListUpdate.swap(ptrListUpdate);
+    TMPptrListSet.swap(ptrListSet);
 }
 
 void ParamService::timerFinished(int timID) {
@@ -376,4 +420,42 @@ QSet<uchar> ParamService::getAllHostsInSet() {
    for(const auto& param : dataMap)
        retVal.insert(param.getHostID());
    return retVal;
+}
+
+void ParamService::configParam(const QString &mapKey){
+    if(dataMap.contains(mapKey)){
+        auto& param = dataMap[mapKey];
+        if(configParamDlgMap.contains(mapKey))
+            configParamDlgMap.value(mapKey)->show();
+        else{
+            configParamDlgMap.insert(mapKey,new ConfigParamDlg(param));
+            connect(configParamDlgMap.value(mapKey), &ConfigParamDlg::newMsgToSend, [this](ProtosMessage& msg) {
+                onNewConfigDlgMsg(msg);
+            });
+        }
+    }
+}
+
+void ParamService::sortByParamID(ParamItemType type) {
+    QList<ParamItem*>* list;
+    if(type == ParamItemType::UPDATE) list = &ptrListUpdate;
+    else if(type == ParamItemType::SET) list = &ptrListSet;
+    else return;
+    std::sort(list->begin(), list->end(), [](const ParamItem* p1, const ParamItem* p2){
+        return p1->getParamId() < p2->getParamId();
+    });
+}
+void ParamService::sortByHostID(ParamItemType type){
+    QList<ParamItem*>* list;
+    if(type == ParamItemType::UPDATE) list = &ptrListUpdate;
+    else if(type == ParamItemType::SET) list = &ptrListSet;
+    else return;
+    std::sort(list->begin(), list->end(), [](const ParamItem* p1, const ParamItem* p2){
+        return p1->getHostID() < p2->getHostID();
+    });
+}
+
+void ParamService::onNewConfigDlgMsg(ProtosMessage &message) {
+    message.SenderAddr = selfAddr;
+    socketAdapter.SendMsg(message);
 }

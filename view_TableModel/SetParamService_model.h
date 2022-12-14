@@ -14,14 +14,7 @@
 class SetParamService_model : public IParamService_model
 {
 public:
-    enum Headers
-    {
-        LastValueTime,
-        PARAM_ID,
-        VALUE,
-        NOTES,
-        DELETE
-    };
+
     explicit SetParamService_model(QList<ParamItem*>&, QObject* parent = nullptr);
     ~SetParamService_model() override = default;
 

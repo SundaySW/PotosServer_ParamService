@@ -13,7 +13,6 @@
 #include <QtWidgets/QGroupBox>
 #include <QtCore/QFile>
 #include <view_ParamTabs/SetParamValueDlg.h>
-#include "connection_dialog.h"
 #include "ParamItem.h"
 #include "ParamService.h"
 #include "Settings_dlg.h"
@@ -28,9 +27,8 @@ public:
     MainWindow(int argv, char** argc, QWidget *parent = nullptr);
 private slots:
     void OnClickedTableCell(const QModelIndex &index);
-    void OnChangedValueTableCell(const QModelIndex&);
-    void OnlyInDBShow(bool);
-    void OnlyOnlineShow(bool);
+    void OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq);
+    void sortColumns(ParamItemType, IParamModel::Headers);
 protected:
     void timerEvent(QTimerEvent *event) override;
 private:
@@ -67,5 +65,7 @@ private:
     void updateHostsSet();
     inline void updateServiceLabel(QLabel *label, bool status);
     void checkServicesConnection();
+
+    QSplitter *makeSplitter();
 };
 #endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H

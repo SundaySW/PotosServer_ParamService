@@ -7,7 +7,7 @@
 #include "SetParamService_model.h"
 
 const QString SetParamService_model::ColumnHeaders[SetParamService_model::nOfColumns] = {
-        tr("TimeStamp"), tr("ID"), tr("VALUE"), tr("NOTES")
+        tr("TimeStamp"), tr("PARAM_ID"), tr("HOST_ID"), tr("VALUE"), tr("NOTES")
 };
 
 SetParamService_model::SetParamService_model(QList<ParamItem*>& inList, QObject* parent):
@@ -23,7 +23,7 @@ bool SetParamService_model::setData(const QModelIndex &index, const QVariant &va
     if(data->getParamType() != paramTypeOnModel)
         return false;
     switch (index.column()) {
-        case PARAM_ID:
+        case IParamModel::PARAM_ID:
             if(role == Qt::EditRole){
                 if(value.canConvert(QVariant::String) && value.toString().size()){
                     data->setAltName(value.toString());
@@ -32,7 +32,7 @@ bool SetParamService_model::setData(const QModelIndex &index, const QVariant &va
                 }
             }
             break;
-        case NOTES:
+        case IParamModel::NOTES:
             if(role == Qt::EditRole){
                 if(value.canConvert(QVariant::String) && value.toString().size()){
                   data->setNote(value.toString());
@@ -59,7 +59,7 @@ bool SetParamService_model::setData(const QModelIndex &index, const QVariant &va
 }
 
 QVariant SetParamService_model::data(const QModelIndex &index, int role) const{
-    if (index.column() < 0 || index.column() > ColCnt || index.row() < 0 || index.row() > paramPtrList.size())
+    if (index.column() < 0 || index.column() > ColCnt || index.row() < 0 || index.row() >= paramPtrList.size())
         return QVariant();
     auto* data = paramPtrList[index.row()];
     if(data->getParamType() != paramTypeOnModel)
@@ -82,21 +82,22 @@ QVariant SetParamService_model::GetDisplayRoleData(const QModelIndex& index, Par
 {
     switch (index.column())
     {
-        case LastValueTime:
+        case IParamModel::LastValueTime:
             return data->getLastValueTime() + " " + data->getLastValueDay();
-        case PARAM_ID: {
-            QString value = QString("0x%1").arg(data->geParamId(), 0, 16);
-            value.append(QString("(from:0x%1)").arg(data->getHostID(),0, 16));
+        case IParamModel::PARAM_ID: {
+            QString value = QString("0x%1").arg(data->getParamId(), 0, 16);
             if (data->getAltName() == " ") return value;
             if (data->getAltName().length())
                 value = value.prepend(data->getAltName() + "(").append(")");
             return value;
         }
-        case VALUE:
+        case IParamModel::PARAM_HOST:
+            return (QString("0x%1").arg(data->getHostID(),0, 16));
+        case IParamModel::VALUE:
             return data->getValue().toString();
-        case NOTES:
+        case IParamModel::NOTES:
             return data->getNote();
-        case DELETE:
+        case IParamModel::DELETE:
             return QString("DELETE ME");
     }
     return QVariant();
@@ -122,9 +123,9 @@ QBrush SetParamService_model::GetDisplayBackgroundRole(const QModelIndex& index,
 
 Qt::ItemFlags SetParamService_model::flags(const QModelIndex& index) const {
     switch (index.column()) {
-        case NOTES:
+        case IParamModel::NOTES:
 //        case VALUE:
-        case PARAM_ID:
+        case IParamModel::PARAM_ID:
             return Qt::ItemIsEditable | Qt::ItemIsEnabled;
             break;
         default:

@@ -51,7 +51,7 @@ ServerConnectWidget::ServerConnectWidget(SocketAdapter& socket, QJsonObject& Jso
 bool ServerConnectWidget::connectToSocket(){
     QString SocketIp   = AddrEdit->text();
     QString SocketPort = PortEdit->text();
-    bool isConnected = Socket.Connect(SocketIp, SocketPort.toInt(), 1000);
+    bool isConnected = Socket.Connect(SocketIp, SocketPort.toInt(), 10);
     QString eventStr;
     bool isError = false;
     if(isConnected){

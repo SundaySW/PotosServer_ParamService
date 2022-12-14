@@ -34,8 +34,8 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
 {
     openFileLoadConfig();
     paramService = new ParamService(ConfJson);
-    updateParamsTab = new UpdateParamsTab(paramService->getPtrList(ParamItemType::UPDATE),this);
-    setParamsTab = new SetParamsTab(paramService->getPtrList(ParamItemType::SET),this);
+    updateParamsTab = new UpdateParamsTab(paramService,this);
+    setParamsTab = new SetParamsTab(paramService,this);
     settingsDlg = new Settings_dlg(paramService, ConfJson, this);
 
     loadMainWindowSettings();
@@ -43,39 +43,29 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     mainLayout->setContentsMargins(10, 10, 10, 10);
     CentralWin->setLayout(mainLayout);
     setCentralWidget(CentralWin);
-
     makeStatusBar();
-    mainLayout->addWidget(makeTabs());
+
     mainLayout->addWidget(makeParamSetGroupBox());
-    mainLayout->addWidget(logWidgetConfig());
+    mainLayout->addWidget(makeSplitter());
+
     checkServicesConnection();
 
-    connect(updateParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
-    connect(updateParamsTab, &UpdateParamsTab::addedParamSig, [this](uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType){
-        paramService->addParam(incomeID, incomeHostAddr, incomeType);
-    });
-    connect(updateParamsTab, SIGNAL(onlyDBParamShow(bool)), this, SLOT(OnlyInDBShow(bool)));
-    connect(updateParamsTab, SIGNAL(onlyOnlineParamShow(bool)), this, SLOT(OnlyOnlineShow(bool)));
-    connect(updateParamsTab, SIGNAL(tableCellDataUpdated(const QModelIndex&)), this, SLOT(OnChangedValueTableCell(const QModelIndex&)));
-
+    connect(updateParamsTab, SIGNAL(ParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)), this, SLOT(OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)));
     connect(setParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
-    connect(setParamsTab, &SetParamsTab::addedParamSig, [this](uchar incomeID, uchar incomeHostAddr, ParamItemType incomeType){
-        paramService->addParam(incomeID, incomeHostAddr, incomeType);
-    });
-    connect(setParamsTab, SIGNAL(tableCellDataUpdated(const QModelIndex&)), this, SLOT(OnChangedValueTableCell(const QModelIndex&)));
+    connect(setParamsTab, SIGNAL(ParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)), this, SLOT(OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)));
 
     connect(paramService, &ParamService::changedParamState, [this](ParamItemType type){
-        if(type == UPDATE) updateParamsTab->getModel()->update(IParamService_model::UPDATE_TASK);
-        else if(type == SET) setParamsTab->getModel()->update(IParamService_model::UPDATE_TASK);
+        if(type == UPDATE) updateParamsTab->getModel()->update(IParamModel::UPDATE_TASK);
+        else if(type == SET) setParamsTab->getModel()->update(IParamModel::UPDATE_TASK);
     });
     connect(paramService, &ParamService::addedParamFromLine, [this](ParamItemType type){
         updateHostsSet();
-        if(type == UPDATE) updateParamsTab->getModel()->update(IParamService_model::INSERT_ROW_TASK);
-        else if(type == SET) setParamsTab->getModel()->update(IParamService_model::INSERT_ROW_TASK);
+        if(type == UPDATE) updateParamsTab->getModel()->update(IParamModel::INSERT_ROW_TASK);
+        else if(type == SET) setParamsTab->getModel()->update(IParamModel::INSERT_ROW_TASK);
     });
     connect(paramService, &ParamService::needToResetModels, [this](){
-        updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
-        setParamsTab->getModel()->update(IParamService_model::RESET_TASK);
+        updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
+        setParamsTab->getModel()->update(IParamModel::RESET_TASK);
     });
     connect(paramService, &ParamService::databaseWriteFail, [this](){
         logToFile->setChecked(paramService->isWriteToFile());
@@ -93,9 +83,22 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     });
 }
 
+QSplitter* MainWindow::makeSplitter(){
+    auto* pSplitter = new QSplitter(CentralWin);
+    pSplitter->setSizePolicy(QSizePolicy::QSizePolicy::Expanding,
+                             QSizePolicy::QSizePolicy::Expanding);
+    pSplitter->setOrientation(Qt::Vertical);
+    pSplitter->addWidget(makeTabs());
+    pSplitter->addWidget(logWidgetConfig());
+    pSplitter->setStretchFactor(0, 1);
+    pSplitter->setStretchFactor(1, 0);
+    pSplitter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
+    return pSplitter;
+}
+
 QGroupBox* MainWindow::makeParamSetGroupBox(){
-    auto* addParamGroupBox = new QGroupBox(tr("Some settings here"), this);
-//    addParamGroupBox->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
+    auto* addParamGroupBox = new QGroupBox(tr(""), this);
+    addParamGroupBox->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Minimum,QSizePolicy::ButtonBox));
 
     auto* searchGroupBoxLayout = new QHBoxLayout(addParamGroupBox);
     searchGroupBoxLayout->setSpacing(10);
@@ -141,9 +144,12 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
     hostSortCombBox->setEditable(false);
     updateHostsSet();
     connect(hostSortCombBox, &QComboBox::currentTextChanged, [this](const QString& selectedHost){
+
+    });
+    connect(hostSortCombBox, &QComboBox::currentTextChanged, [this](const QString& selectedHost){
         paramService->sortAllParamsAboutHost(selectedHost);
-        setParamsTab->getModel()->update(IParamService_model::RESET_TASK);
-        updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
+        setParamsTab->getModel()->update(IParamModel::RESET_TASK);
+        updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
     });
 
     makeEvent->setEnabled(true);
@@ -214,7 +220,9 @@ QToolBar* MainWindow::CreateToolbar()
 }
 
 QListWidget* MainWindow::logWidgetConfig(){
-    logWidget->setFixedHeight(80);
+    logWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    logWidget->setSizePolicy(QSizePolicy::QSizePolicy::Expanding,
+                                 QSizePolicy::QSizePolicy::Expanding);
     logWidget->setAlternatingRowColors(true);
     return logWidget;
 }
@@ -244,19 +252,19 @@ void MainWindow::openFileLoadConfig() {
 }
 
 void MainWindow::timerEvent(QTimerEvent *event){
-    updateParamsTab->getModel()->update(UpdateParamService_model::UPDATE_TASKS::UPDATE_TASK);
+    updateParamsTab->getModel()->update(IParamModel::UPDATE_TASKS::UPDATE_TASK);
 }
 
 void MainWindow::OnClickedTableCell(const QModelIndex &index) {
     auto* model = (IParamService_model*)index.model();
-    auto* param = model->getParam(index);
+    auto* param = model->getParam(index.row());
     auto mapKey = ParamService::makeMapKey(*param);
     if(model->getType() == SET && model->isSetCellClicked(index.column())){
         if(setParamValueDlgMap.contains(mapKey)) {
             setParamValueDlgMap.value(mapKey)->show();
             return;
         }
-        auto* dlg = new SetParamValueDlg(param->geParamId(), param->getHostID(), this);
+        auto* dlg = new SetParamValueDlg(param->getParamId(), param->getHostID(), this);
         dlg->show();
         dlg->raise();
         dlg->activateWindow();
@@ -264,36 +272,6 @@ void MainWindow::OnClickedTableCell(const QModelIndex &index) {
             paramService->setParamValueChanged(index.row(), value);
         });
         setParamValueDlgMap.insert(mapKey, dlg);
-    }
-    if(model->isDeleteCellClicked(index)){
-        QDialog dlg(this);
-        dlg.setWindowTitle("Move/Remove Param");
-        auto *layout = new QFormLayout();
-        auto label = new QLabel(QString("Move/Remove Param: ") + QString("%1?").arg(mapKey).toUpper().prepend("0x"), &dlg);
-        auto* moveBtn = new QPushButton("Move");
-        auto* removeBtn = new QPushButton("Remove");
-        label->setAlignment(Qt::AlignHCenter);
-        layout->addRow(label);
-        layout->addWidget(removeBtn);
-        if(param->getParamType()==UPDATE)
-            layout->addWidget(moveBtn);
-        dlg.setLayout(layout);
-        connect(moveBtn, &QPushButton::clicked, [this, mapKey, &dlg]() {
-            paramService->moveUpdateToSet(mapKey);
-            dlg.close();
-        });
-        connect(removeBtn, &QPushButton::clicked, [this, param, model, index, mapKey, &dlg](){
-            bool paramDeleted = paramService->removeParam(*param);
-            if(paramDeleted) model->removeRow(index);
-            if(setParamValueDlgMap.contains(mapKey)){
-                setParamValueDlgMap[mapKey]->setAttribute(Qt::WA_DeleteOnClose, true);
-                setParamValueDlgMap[mapKey]->close();
-                setParamValueDlgMap.remove(mapKey);
-            }
-            updateHostsSet();
-            dlg.close();
-        });
-        dlg.exec();
     }
 }
 
@@ -356,26 +334,35 @@ void MainWindow::AddToLog(const QString& string, bool isError)
             setForeground(isError ? QBrush(QColor("red")) : QBrush(QColor("green")));
 }
 
-void MainWindow::OnChangedValueTableCell(const QModelIndex& index) {
-//    if(index.column() == SetParamService_model::Headers::VALUE)
-//        paramService->setParamValueChanged(index.row());
+void MainWindow::sortColumns(ParamItemType type, IParamModel::Headers header){
+    if(header == IParamModel::PARAM_ID) paramService->sortByParamID(type);
+    else if(header == IParamModel::PARAM_HOST) paramService->sortByHostID(type);
+    if(type == UPDATE)
+        updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
+    else if(type == SET)
+        setParamsTab->getModel()->update(IParamModel::RESET_TASK);
+}
+
+void MainWindow::OnParamContextMenuReq(const QModelIndex &index, IParamModel::ContextMenuReq req) {
     auto* model = (IParamService_model*)index.model();
-    auto* param = model->getParam(index);
-    auto tableName = param->getTableName();
-    if(index.column() == SetParamService_model::Headers::PARAM_ID || index.column() == UpdateParamService_model::Headers::PARAM_ID){
-        paramService->logViewChangesToDB(QString("%1 : new alt_name : %2").arg(tableName).arg(index.model()->data(index).toString()));
+    auto* param = model->getParam(index.row());
+    auto mapKey = ParamService::makeMapKey(*param);
+    switch (req){
+        case IParamModel::Config:
+            paramService->configParam(mapKey);
+            break;
+        case IParamModel::Move:
+            paramService->moveUpdateToSet(mapKey);
+            break;
+        case IParamModel::Delete:
+            bool paramDeleted = paramService->removeParam(mapKey);
+            if(paramDeleted) model->removeRow(index);
+            if(setParamValueDlgMap.contains(mapKey)){
+                setParamValueDlgMap[mapKey]->setAttribute(Qt::WA_DeleteOnClose);
+                setParamValueDlgMap[mapKey]->close();
+                setParamValueDlgMap.remove(mapKey);
+            }
+            updateHostsSet();
+            break;
     }
-    else if(index.column() == SetParamService_model::Headers::NOTES || index.column() == UpdateParamService_model::Headers::NOTES){
-        paramService->logViewChangesToDB(QString("%1 : new note : %2").arg(tableName).arg(index.model()->data(index).toString()));
-    }
-}
-
-void MainWindow::OnlyInDBShow(bool state) {
-    paramService->sortUpdateParamListAboutDB(state);
-    updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
-}
-
-void MainWindow::OnlyOnlineShow(bool state) {
-    paramService->sortUpdateListAboutOnline(state);
-    updateParamsTab->getModel()->update(IParamService_model::RESET_TASK);
 }

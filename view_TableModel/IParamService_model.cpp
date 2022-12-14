@@ -5,10 +5,7 @@
 #include "SetParamService_model.h"
 
 int IParamService_model::rowCount(const QModelIndex &) const{
-    int retVal = 0;
-    for(auto p:paramPtrList)
-        if(p->getParamType() == paramTypeOnModel) retVal++;
-    return retVal;
+    return paramPtrList.size();
 }
 
 int IParamService_model::columnCount(const QModelIndex &parent) const {
@@ -19,15 +16,15 @@ void IParamService_model::addRow() {
     beginInsertRows(QModelIndex(), paramPtrList.size(), paramPtrList.size());
     endInsertRows();
 }
-void IParamService_model::update(UPDATE_TASKS task) {
+void IParamService_model::update(IParamModel::UPDATE_TASKS task) {
     switch (task) {
-        case UPDATE_TASK:
+        case IParamModel::UPDATE_TASK:
             emit dataChanged(createIndex(0, 0), createIndex(0, ColCnt));
             break;
-        case INSERT_ROW_TASK:
+        case IParamModel::INSERT_ROW_TASK:
             addRow();
             break;
-        case RESET_TASK:
+        case IParamModel::RESET_TASK:
             beginResetModel();
             endResetModel();
             break;
@@ -36,7 +33,7 @@ void IParamService_model::update(UPDATE_TASKS task) {
     }
 }
 void IParamService_model::removeRow(const QModelIndex &index){
-    beginRemoveRows(QModelIndex(), index.row(), index.row());
+    beginRemoveRows(index, index.row(), index.row());
     endRemoveRows();
 }
 bool IParamService_model::isDeleteCellClicked(const QModelIndex& index) {
@@ -44,18 +41,17 @@ bool IParamService_model::isDeleteCellClicked(const QModelIndex& index) {
 }
 
 bool IParamService_model::isSetCellClicked(int col) {
-    return col == SetParamService_model::Headers::VALUE;
+    return col == IParamModel::VALUE;
 }
 
-const ParamItem* IParamService_model::getParam(const QModelIndex& index){
-    return paramPtrList[index.row()];
+const ParamItem* IParamService_model::getParam(int index){
+    return paramPtrList[index];
 }
 
 bool IParamService_model::checkType(ParamItemType checkType) {
-    return checkType == type;
+    return checkType == paramTypeOnModel;
 }
 
 ParamItemType IParamService_model::getType() const {
     return type;
 }
-

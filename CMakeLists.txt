@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PotosServer_ParamService C CXX ASM)
-add_definitions(-D_VER="V1.0")
+add_definitions(-D_VER="V1.2")
 add_definitions(-D_BUILD_TYPE_="${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_STANDARD 20)

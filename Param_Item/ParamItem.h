@@ -33,7 +33,7 @@ public:
     explicit ParamItem(QJsonObject&);
     explicit ParamItem(const ProtosMessage &message, ParamItemType type);
 
-    [[nodiscard]] uchar geParamId() const;
+    [[nodiscard]] uchar getParamId() const;
     [[nodiscard]] uchar getHostID() const;
     [[nodiscard]] const QVariant &getValue() const;
     [[nodiscard]] const QString &getNote() const;
@@ -41,7 +41,6 @@ public:
     [[nodiscard]] ParamItemType getParamType() const;
     [[nodiscard]] bool isWriteToDb() const;
     [[nodiscard]] QString getTableName() const;
-    [[nodiscard]] int getTimerId() const;
     [[nodiscard]] int getUpdateRate() const;
     QString getLastValueTime();
     QString getLastValueDay();
@@ -50,12 +49,13 @@ public:
     static QString getTableInsertVars();
     QString getLogToFileStr(const QString &eventStr);
     QString getTableInsertValues(const QString &eventStr = "") const;
-    const QString& getAltName();
+    QString getAltName() const;
     uchar getSenderId() const;
     const QVariant &getExpectedValue() const;
     ProtosMessage::MsgTypes getLastValueType() const;
     uchar getDestId() const;
 
+    void setUpdateRate(short updateRate);
     void setValue(const QVariant &value);
     void setLastValueType(ProtosMessage::MsgTypes lastValueType);
     void setExpectedValue(const QVariant &value);
@@ -67,7 +67,6 @@ public:
     bool setParamType(ParamItemType paramType);
     void setSenderId(uchar senderId);
     void setDestId(uchar destID);
-    void setTimerId(int timerId);
     void timeoutUpdate();
     void update(const ProtosMessage &message);
     QString getLogToFileHead();
@@ -85,7 +84,7 @@ private:
     ParamItemStates state;
     ParamItemType paramType;
     bool writeToDB;
-    int updateRate = 5000;
+    short updateRate = 5000;
 };
 
 #endif //POTOSSERVER_PARAMSERVICE_PARAMITEM_H

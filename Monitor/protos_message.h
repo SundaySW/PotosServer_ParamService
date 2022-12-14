@@ -133,7 +133,9 @@ struct ProtosMessage
 	ProtosMessage& SetParamField(ProtosMessage::ParamFields field, uchar paramId = 0, ProtosMessage::MsgTypes msgType = NONE, QVariant fieldValue = QVariant(), uchar destAddr = 0, uchar senderAddr = 0);
 	ProtosMessage& SetParamValue(char  charValue,  uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
 	ProtosMessage& SetParamValue(short shortValue, uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
-	ProtosMessage& SetParamValue(int   intValue,   uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
+    void SetParamValue(short, bool);
+    void SetParamValue(float, bool);
+    ProtosMessage& SetParamValue(int intValue,   uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
 	ProtosMessage& SetParamValue(float floatValue, uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
 	ProtosMessage& SetParamValue(const QString& stringValue, uchar paramId = 0, ProtosMessage::MsgTypes msgType = PSET, uchar destAddr = 0, uchar senderAddr = 0);
 

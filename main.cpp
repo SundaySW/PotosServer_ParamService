@@ -14,7 +14,7 @@ int main(int argv, char** argc)
     QApplication app(argv, argc);
     MainWindow mainWin(argv, argc);
     mainWin.setWindowTitle(QString("Protos Param Service %1").arg(CURRENT_VER));
-    mainWin.resize(700, 550);
+    mainWin.resize(700, 800);
     mainWin.show();
     int res = QApplication::exec();
     return res;

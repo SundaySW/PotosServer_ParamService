@@ -11,18 +11,10 @@
 #include <QBrush>
 #include "IParamService_model.h"
 
+
 class UpdateParamService_model : public IParamService_model
 {
 public:
-    enum Headers
-    {
-        DB_Active,
-        LastValueTime,
-        PARAM_ID,
-        VALUE,
-        NOTES,
-        DELETE
-    };
     explicit UpdateParamService_model(QList<ParamItem*>&, QObject* parent = nullptr);
     ~UpdateParamService_model() override = default;
 
