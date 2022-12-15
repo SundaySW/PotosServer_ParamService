@@ -104,12 +104,13 @@ void ServerConnectWidget::setEditsStateDisabled(bool state){
 void ServerConnectWidget::checkConnectTimerFinished(){
     if(Socket.IsConnected()) return;
     countOfReconnect++;
-    emit eventInServerConnection(QString("Server found disconnected - now making %1 of %2 attempt to connect").arg(countOfReconnect).arg(MAX_COUNT_OF_RECONNECT), true);
+//    emit eventInServerConnection(QString("Server found disconnected - now making %1 of %2 attempt to connect").arg(countOfReconnect).arg(MAX_COUNT_OF_RECONNECT), true);
+    emit eventInServerConnection(QString("Server found disconnected - now making %1 attempt to connect").arg(countOfReconnect), true);
     connectToSocket();
-    if(countOfReconnect == MAX_COUNT_OF_RECONNECT) {
-        checkConnectTimer->stop();
-        emit eventInServerConnection(QString("Cant reconnect, no more auto connections - please use settings dialog to connect to server").arg(countOfReconnect), true);
-    }
+//    if(countOfReconnect == MAX_COUNT_OF_RECONNECT) {
+//        checkConnectTimer->stop();
+//        emit eventInServerConnection(QString("Cant reconnect, no more auto connections - please use settings dialog to connect to server").arg(countOfReconnect), true);
+//    }
 }
 void ServerConnectWidget::startCheckConnectionTimer(){
     countOfReconnect = 0;
