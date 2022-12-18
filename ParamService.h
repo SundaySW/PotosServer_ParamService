@@ -50,7 +50,10 @@ public:
     uchar getSelfAddr() const;
     void closeAll();
     void configParam(const QString &mapKey);
+    void setReqOnSet(bool _reqOnSet);
+    bool isReqOnSet() const;
     QSet<uchar> getAllHostsInSet();
+    void removeAllParams();
 signals:
     void changedParamState(ParamItemType);
     void addedParamFromLine(ParamItemType);
@@ -74,6 +77,7 @@ private:
     QTimer* writeTimer;
     int mSecWriteTimer = 1000;
     bool writeToFile;
+    bool reqOnSet;
     QFile* logFile;
     QTextStream textStream;
     QJsonObject& qJsonObject;
@@ -88,12 +92,9 @@ private:
     void setParamEvent(const QString &mapKey);
     void sendProtosMsgSetParam(const QString &mapKey);
     void processSetParamReq(const QString &mapKey);
-    void manageTimersinUpdate(const QString &mapKey, uchar msgType, int updateRate, int paramType);
-
+    void manageTimersWhileUpdate(const QString &mapKey, uchar msgType, int updateRate, int paramType);
     void processPANSMsg(const ProtosMessage &message);
-
     void removeFromAllMaps(const QString &mapKey);
-
     void updateParamUpdateRate(const QString &mapKey, const QVariant &value);
 };
 #endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H

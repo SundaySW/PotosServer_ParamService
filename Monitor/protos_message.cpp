@@ -201,7 +201,7 @@ QString ProtosMessage::GetMsgTypeName(uchar msgType)
 	case SERR: return "S.ERR";
 	case PREQ: return "P.REQ";
 	case PANS: return "P.ANS";
-	case PSET: return "P.SET";
+	case PSET: return "P.CONTROL";
 	case PERR: return "P.ERR";
 	default:   return "UNDEFINED";
 	}

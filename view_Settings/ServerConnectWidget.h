@@ -24,15 +24,18 @@ public:
     void Save();
 signals:
     void eventInServerConnection(const QString&, bool);
+    void updateCountOfReConnections(int count);
 private:
     SocketAdapter& Socket;
     QLineEdit* AddrEdit, *PortEdit;
+    QCheckBox* autoReConnect;
     QPushButton* connectBtn;
+    QPushButton* saveBtn;
     QLabel* statusLabel;
     QJsonObject& savedConf;
     QTimer* checkConnectTimer;
     int countOfReconnect = 0;
-    bool connectToSocket();
+    bool connectToSocket(bool fromEnter = false);
     void setEditsStateDisabled(bool state);
     void updateView();
     void checkConnectTimerFinished();

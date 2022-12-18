@@ -53,14 +53,10 @@ public:
     int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
     bool checkType(ParamItemType);
     bool isSetCellClicked(int);
-
+    ParamItemType getType() const;
 protected:
     QList<ParamItem*>& paramPtrList;
     ParamItemType type;
-public:
-    ParamItemType getType() const;
-
-protected:
     const int ColCnt;
     const ParamItemType paramTypeOnModel;
 };

@@ -110,6 +110,8 @@ QBrush UpdateParamService_model::GetDisplayBackgroundRole(const QModelIndex& ind
         case OFFLINE:
             if(data->isWriteToDb()) return QBrush(QColor("lightgray"));
             else return QBrush(QColor("darkgray"));
+        case PENDING:
+            return QBrush(QColor("bisque"));
         case DB_WRITE_FAIL:
             if(data->isWriteToDb()) return QBrush(QColor("tomato"));
         default:

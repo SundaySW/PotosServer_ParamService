@@ -23,6 +23,7 @@ public:
     };
     explicit ConfigParamDlg(ParamItem&, QWidget *parent = nullptr);
     void processAns(const ProtosMessage&);
+    void raiseWindow();
 signals:
     void newMsgToSend(ProtosMessage&);
 private:
@@ -30,10 +31,12 @@ private:
     QGroupBox* makeCalibBox();
     QGroupBox* makeRatesBox();
     QLineEdit* updateRateValueEdit;
+    QLineEdit* controlRateValueEdit;
     QLineEdit* sendRateValueEdit;
     QLineEdit* offsetValueEdit;
     QLineEdit* multValueEdit;
     QLineEdit* updateRateValueActual;
+    QLineEdit* controlRateValueActual;
     QLineEdit* sendRateValueActual;
     QLineEdit* offsetValueActual;
     QLineEdit* multValueActual;

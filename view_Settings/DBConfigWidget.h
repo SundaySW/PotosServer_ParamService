@@ -25,7 +25,7 @@ public:
     void Save();
     void Set();
 signals:
-    void eventInServerConnection(const QString&, bool);
+    void eventInDBConnection(const QString&, bool);
 private:
     QLineEdit* HostName, *DatabaseName, *UserName, *Password, *Port;
     QCheckBox* autoconnect;

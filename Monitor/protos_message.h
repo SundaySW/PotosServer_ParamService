@@ -23,7 +23,7 @@
 //		"S.ERR", 
 //		"P.REQ", 
 //		"P.ANS", 
-//		"P.SET", 
+//		"P.CONTROL",
 //		"P.ERR" 
 //	};
 //	const QString ParamFieldNames[13] = 

@@ -19,9 +19,9 @@
 SetParamsTab::SetParamsTab(ParamService* Service, QObject* parent):
         paramService(Service),
         setParamView(new QTableView(this)),
-        setParamModel(new SetParamService_model(paramService->getPtrList(SET), this)),
+        setParamModel(new SetParamService_model(paramService->getPtrList(CONTROL), this)),
         addParam(new QPushButton("Add Param", this)),
-        addParamDlg(new AddParamDlg(SET, this))
+        addParamDlg(new AddParamDlg(CONTROL, this))
 {
     auto *layout = new QVBoxLayout();
     setParamView->setModel(setParamModel);

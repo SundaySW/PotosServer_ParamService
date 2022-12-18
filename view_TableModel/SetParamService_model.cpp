@@ -11,7 +11,7 @@ const QString SetParamService_model::ColumnHeaders[SetParamService_model::nOfCol
 };
 
 SetParamService_model::SetParamService_model(QList<ParamItem*>& inList, QObject* parent):
-    IParamService_model(inList,ParamItemType::SET, nOfColumns, parent)
+    IParamService_model(inList, ParamItemType::CONTROL, nOfColumns, parent)
 {
 }
 

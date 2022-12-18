@@ -36,6 +36,7 @@ private:
     QPushButton* addParam;
     QCheckBox* hideOffline;
     QCheckBox* onlyInDB;
+    QPushButton* removeAllParams;
     AddParamDlg* addParamDlg;
 };
 

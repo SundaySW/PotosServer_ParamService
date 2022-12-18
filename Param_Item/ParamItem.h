@@ -13,9 +13,10 @@
 #include "QJsonObject"
 
 enum ParamItemType {
-    UNDEF = 0,
+    BASE = 0,
     UPDATE = 1,
-    SET = 2,
+    CONTROL = 2,
+    CALIB = 3
 };
 
 enum ParamItemStates {

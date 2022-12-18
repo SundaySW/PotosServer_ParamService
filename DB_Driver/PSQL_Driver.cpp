@@ -48,6 +48,7 @@ void PSQL_Driver::loadTableNames(){
         return;
     }
     QStringList results;
+    tableNames.clear();
     while (query.next())
         tableNames.insert(query.value(0).toString());
 }

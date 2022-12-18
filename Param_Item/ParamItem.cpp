@@ -12,14 +12,14 @@ ParamItem::ParamItem(uchar incomeID, uchar hostAddr, ParamItemType type)
     Note(("")),
     paramType(type),
     expectedValue(""),
-    lastValueType(type==SET ? ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS),
-    writeToDB(type == SET),
+    lastValueType(type == CONTROL ? ProtosMessage::MsgTypes::PSET : ProtosMessage::MsgTypes::PANS),
+    writeToDB(false),
     state(OFFLINE)
 {}
 
 ParamItem::ParamItem(const ProtosMessage &message, ParamItemType type){
     ID = message.GetParamId();
-    if(type == SET)
+    if(type == CONTROL)
         Host_ID = message.GetDestAddr();
     else Host_ID = message.GetSenderAddr();
     Dest_ID = message.GetDestAddr();
@@ -28,10 +28,9 @@ ParamItem::ParamItem(const ProtosMessage &message, ParamItemType type){
     Value = message.GetParamFieldValue();
     expectedValue = message.GetParamFieldValue();
     Note = "";
-    writeToDB = (type == SET);
+    writeToDB = (type == CONTROL);
     paramType = UPDATE; //todo check about it
     state = ONLINE;
-//    state = (type == SET) ? PENDING : OFFLINE;
     lastValueTime = QDateTime::currentDateTime();
     lastValueType = (ProtosMessage::MsgTypes)message.MsgType;
 }
@@ -82,7 +81,7 @@ void ParamItem::update(const ProtosMessage &message){
         expectedValue = receivedValue;
         setState(PENDING);
     }
-    else if(lastValueType == ProtosMessage::PANS && paramType == SET){
+    else if(lastValueType == ProtosMessage::PANS && paramType == CONTROL){
         if(receivedValue == expectedValue)
             setState(ONLINE);
     }

@@ -21,6 +21,7 @@ DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDrive
     auto *layout = new QFormLayout();
     layout->setContentsMargins(30, 30, 30, 30);
     auto label = new QLabel("DataBase connection", this);
+    label->setStyleSheet("font-weight: bold; padding: 5px; color: grey;");
     label->setAlignment(Qt::AlignTop);
     layout->addRow(label);
     layout->addRow(QString("Host Name"), HostName);
@@ -45,7 +46,7 @@ DBConfigWidget::DBConfigWidget(QJsonObject &JsonConf, PSQL_Driver& databaseDrive
                 return;
             }
         }
-        emit eventInServerConnection("", false);
+        emit eventInDBConnection("", false);
         updateView();
     });
     connect(saveBtn, &QPushButton::clicked, [this](){Save();});

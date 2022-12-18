@@ -65,7 +65,7 @@ private:
     void updateHostsSet();
     inline void updateServiceLabel(QLabel *label, bool status);
     void checkServicesConnection();
-
     QSplitter *makeSplitter();
+    void saveLogToFile();
 };
 #endif //POTOSSERVER_PARAMSERVICE_MAIN_WINDOW_H

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PotosServer_ParamService C CXX ASM)
-add_definitions(-D_VER="V1.2")
+add_definitions(-D_VER="V1.3")
 add_definitions(-D_BUILD_TYPE_="${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -59,11 +59,14 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
             TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/qss/ ${CMAKE_CURRENT_BINARY_DIR}/qss/
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/logs/ ${CMAKE_CURRENT_BINARY_DIR}/logs/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/appLogs/ ${CMAKE_CURRENT_BINARY_DIR}/appLogs/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/psql_libs/lib ${CMAKE_CURRENT_BINARY_DIR}/
     )
     add_custom_command(
             TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND windeployqt "$<TARGET_FILE:${PROJECT_NAME}>"
-            VERBATIM)
+            VERBATIM
+    )
 ENDIF()
 
 #target_compile_definitions(${PROJECT_NAME}
@@ -83,6 +86,13 @@ target_sources(${PROJECT_NAME}
         PRIVATE
         ${SOURCE_FILES}
         )
+
+#add_library(psql SHARED IMPORTED)
+#set_target_properties(psql PROPERTIES
+#        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/psql_libs/lib"
+#        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/psql_libs/inc"
+#        )
+#target_link_libraries(${PROJECT_NAME} psql)
 
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Core)
 target_link_libraries(${PROJECT_NAME} ${qt_ver}::Gui)

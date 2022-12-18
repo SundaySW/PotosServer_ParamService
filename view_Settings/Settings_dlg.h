@@ -28,6 +28,7 @@ public:
     Settings_dlg(ParamService* paramService, QJsonObject&, QWidget *parent = nullptr);
 signals:
     void eventInSettings(const QString&, bool);
+    void updateNOfReConnections(int);
 private:
     QTabWidget* tabWidget;
     void closeEvent(QCloseEvent *event) override;

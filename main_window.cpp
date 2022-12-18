@@ -51,19 +51,26 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     checkServicesConnection();
 
     connect(updateParamsTab, SIGNAL(ParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)), this, SLOT(OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)));
+    connect(updateParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
     connect(setParamsTab, SIGNAL(tableCellClicked(const QModelIndex&)), this, SLOT(OnClickedTableCell(const QModelIndex&)));
     connect(setParamsTab, SIGNAL(ParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)), this, SLOT(OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq)));
 
     connect(paramService, &ParamService::changedParamState, [this](ParamItemType type){
         if(type == UPDATE) updateParamsTab->getModel()->update(IParamModel::UPDATE_TASK);
-        else if(type == SET) setParamsTab->getModel()->update(IParamModel::UPDATE_TASK);
+        else if(type == CONTROL) setParamsTab->getModel()->update(IParamModel::UPDATE_TASK);
     });
     connect(paramService, &ParamService::addedParamFromLine, [this](ParamItemType type){
         updateHostsSet();
         if(type == UPDATE) updateParamsTab->getModel()->update(IParamModel::INSERT_ROW_TASK);
-        else if(type == SET) setParamsTab->getModel()->update(IParamModel::INSERT_ROW_TASK);
+        else if(type == CONTROL) setParamsTab->getModel()->update(IParamModel::INSERT_ROW_TASK);
     });
     connect(paramService, &ParamService::needToResetModels, [this](){
+        for(auto it=setParamValueDlgMap.begin(); it!=setParamValueDlgMap.end(); it++){
+            it.value()->setAttribute(Qt::WA_DeleteOnClose);
+            it.value()->close();
+        }
+        setParamValueDlgMap.clear();
+        updateHostsSet();
         updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
         setParamsTab->getModel()->update(IParamModel::RESET_TASK);
     });
@@ -80,6 +87,9 @@ MainWindow::MainWindow(int argv, char** argc, QWidget *parent)
     connect(settingsDlg, &Settings_dlg::eventInSettings, [this](const QString& str, bool err){
         AddToLog(str, err);
         checkServicesConnection();
+    });
+    connect(settingsDlg, &Settings_dlg::updateNOfReConnections, [this](int n){
+        serverLabel->setText(QString("ProtosServer %1").arg(n));
     });
 }
 
@@ -127,17 +137,6 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
         paramService->setWriteToFile(checked);
     });
 
-    auto selfAddrLabel = new QLabel("Self Address: ", this);
-    selfAddrLabel->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::Label));
-    auto selfAddr = new QLineEdit( this);
-    selfAddr->setText(QString("%1").arg(paramService->getSelfAddr(),0,16));
-    selfAddr->setMaximumSize(50,500);
-    selfAddr->setAlignment(Qt::AlignCenter);
-    selfAddr->setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Fixed,QSizePolicy::LineEdit));
-    connect(selfAddr, &QLineEdit::textChanged, [this](const QString& newSelfAddr){
-        paramService->setSelfAddr(newSelfAddr.toInt(nullptr,16));
-    });
-
     auto sortByHostLabel = new QLabel("Sort all tabs by host 0x", this);
     sortByHostLabel->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::Label));
     hostSortCombBox = new QComboBox(this);
@@ -155,8 +154,6 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
     makeEvent->setEnabled(true);
     searchGroupBoxLayout->addWidget(makeEvent);
     searchGroupBoxLayout->addWidget(logToFile);
-    searchGroupBoxLayout->addWidget(selfAddrLabel);
-    searchGroupBoxLayout->addWidget(selfAddr);
     searchGroupBoxLayout->addWidget(sortByHostLabel);
     searchGroupBoxLayout->addWidget(hostSortCombBox);
     return addParamGroupBox;
@@ -185,8 +182,9 @@ QTabWidget* MainWindow::makeTabs(){
     tableTabWidget->setTabPosition(QTabWidget::North);
     tableTabWidget->setMovable(true);
     tableTabWidget->setTabBarAutoHide(true);
-    tableTabWidget->addTab(updateParamsTab, "Update Params");
-    tableTabWidget->addTab(setParamsTab, "Control Params");
+    tableTabWidget->addTab(updateParamsTab, "Params");
+//    tableTabWidget->addTab(updateParamsTab, "Update Params");
+//    tableTabWidget->addTab(setParamsTab, "Control Params");
     return tableTabWidget;
 }
 
@@ -259,9 +257,10 @@ void MainWindow::OnClickedTableCell(const QModelIndex &index) {
     auto* model = (IParamService_model*)index.model();
     auto* param = model->getParam(index.row());
     auto mapKey = ParamService::makeMapKey(*param);
-    if(model->getType() == SET && model->isSetCellClicked(index.column())){
+    if(model->isSetCellClicked(index.column())){
         if(setParamValueDlgMap.contains(mapKey)) {
             setParamValueDlgMap.value(mapKey)->show();
+            setParamValueDlgMap.value(mapKey)->raise();
             return;
         }
         auto* dlg = new SetParamValueDlg(param->getParamId(), param->getHostID(), this);
@@ -301,8 +300,22 @@ void MainWindow::saveAll(){
     configFile->resize(0);
     configFile->write(doc.toJson(QJsonDocument::Indented));
     configFile->close();
-
+    saveLogToFile();
 }
+
+void MainWindow::saveLogToFile(){
+    auto fileName = QDateTime::currentDateTime().toString(QString("yyyy.MM.dd_hh.mm.ss")).append(".txt");
+    auto pathToLogs = QString(CURRENT_BUILD_TYPE_) == "Debug" ? "/../appLogs" : "/appLogs";
+    auto logFile = new QFile(QCoreApplication::applicationDirPath() + QString("%1/%2").arg(pathToLogs).arg(fileName));
+    logFile->open(QIODevice::ReadWrite);
+    QTextStream textStream;
+    textStream.setDevice(logFile);
+    for(int i=0;i<logWidget->count()-1;i++)
+        textStream << logWidget->item(i)->text() + '\n';
+    textStream.flush();
+    logFile->close();
+}
+
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
@@ -318,7 +331,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 void MainWindow::checkServicesConnection(){
-    updateServiceLabel(serverLabel, paramService->isSocketConnected());
+    if(paramService->isSocketConnected()){
+        serverLabel->setText("ProtosServer");
+        serverLabel->setStyleSheet("color : green");
+    }else
+        serverLabel->setStyleSheet("color : red");
+
     updateServiceLabel(dbLabel, paramService->isDataBaseOk());
 }
 
@@ -339,7 +357,7 @@ void MainWindow::sortColumns(ParamItemType type, IParamModel::Headers header){
     else if(header == IParamModel::PARAM_HOST) paramService->sortByHostID(type);
     if(type == UPDATE)
         updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
-    else if(type == SET)
+    else if(type == CONTROL)
         setParamsTab->getModel()->update(IParamModel::RESET_TASK);
 }
 
@@ -352,7 +370,7 @@ void MainWindow::OnParamContextMenuReq(const QModelIndex &index, IParamModel::Co
             paramService->configParam(mapKey);
             break;
         case IParamModel::Move:
-            paramService->moveUpdateToSet(mapKey);
+//            paramService->moveUpdateToSet(mapKey);
             break;
         case IParamModel::Delete:
             bool paramDeleted = paramService->removeParam(mapKey);

@@ -21,7 +21,8 @@ UpdateParamsTab::UpdateParamsTab(ParamService* Service, QObject* parent):
     addParam(new QPushButton("Add Param", this)),
     hideOffline(new QCheckBox("Hide offline",this)),
     onlyInDB(new QCheckBox("Only in DB", this)),
-    addParamDlg(new AddParamDlg(UPDATE, this))
+    addParamDlg(new AddParamDlg(UPDATE, this)),
+    removeAllParams(new QPushButton("Remove All", this))
 {
     auto *layout = new QVBoxLayout();
     updateView->setModel(updateParamModel);
@@ -35,6 +36,7 @@ UpdateParamsTab::UpdateParamsTab(ParamService* Service, QObject* parent):
     layout->addWidget(updateView);
 
     addParam->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
+    removeAllParams->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::ToolButton));
     hideOffline->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::CheckBox));
     onlyInDB->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::CheckBox));
 
@@ -43,6 +45,7 @@ UpdateParamsTab::UpdateParamsTab(ParamService* Service, QObject* parent):
     btnGroupBoxLayout->addWidget(addParam);
     btnGroupBoxLayout->addWidget(hideOffline);
     btnGroupBoxLayout->addWidget(onlyInDB);
+    btnGroupBoxLayout->addWidget(removeAllParams);
     btnGroupBoxLayout->setAlignment(Qt::AlignHCenter);
     btnGroupBox->setLayout(btnGroupBoxLayout);
     layout->addWidget(btnGroupBox);
@@ -64,11 +67,14 @@ UpdateParamsTab::UpdateParamsTab(ParamService* Service, QObject* parent):
         paramService->sortUpdateListAboutOnline(checked);
         getModel()->update(IParamModel::RESET_TASK);
     });
+    connect(removeAllParams, &QPushButton::clicked, [this](){
+        paramService->removeAllParams();
+    });
 
     connect(updateView->model(), SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(UpdtData(const QModelIndex&, const QModelIndex&)));
     connect(updateView, SIGNAL(clicked(const QModelIndex&)), this, SLOT(TCClicked(const QModelIndex&)));
     connect(updateView->horizontalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(on_sectionClicked(int)));
-//    connect(updateView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(TCClicked(const QModelIndex&)));
+    connect(updateView, SIGNAL(clicked(const QModelIndex&)), this, SLOT(TCClicked(const QModelIndex&)));
     connect(updateView, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(ContextMenuRequested(const QPoint&)));
 }
 
@@ -99,19 +105,19 @@ void UpdateParamsTab::ContextMenuRequested(const QPoint& pos) {
         auto* menu = new QMenu(this);
         auto* configParam = new QAction(QString("Config"), this);
         auto* deleteParam = new QAction(QString("Delete"), this);
-        auto* moveParam = new QAction(QString("Move"), this);
+//        auto* moveParam = new QAction(QString("Move"), this);
         connect(configParam, &QAction::triggered, this, [this, index](){
             emit ParamContextMenuReq(index, IParamModel::ContextMenuReq::Config);
         });
         connect(deleteParam, &QAction::triggered, this, [this, index](){
             emit ParamContextMenuReq(index, IParamModel::ContextMenuReq::Delete);
         });
-        connect(moveParam, &QAction::triggered, this, [this, index](){
-            emit ParamContextMenuReq(index, IParamModel::ContextMenuReq::Move);
-        });
+//        connect(moveParam, &QAction::triggered, this, [this, index](){
+//            emit ParamContextMenuReq(index, IParamModel::ContextMenuReq::Move);
+//        });
         menu->addAction(configParam);
         menu->addAction(deleteParam);
-        menu->addAction(moveParam);
+//        menu->addAction(moveParam);
         menu->popup(updateView->viewport()->mapToGlobal(pos));
     }
 }

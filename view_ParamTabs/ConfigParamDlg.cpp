@@ -13,21 +13,22 @@ ConfigParamDlg::ConfigParamDlg(ParamItem& paramItem, QWidget *parent):
         offsetValueEdit(new QLineEdit(this)),
         multValueEdit(new QLineEdit(this)),
         updateRateValueEdit(new QLineEdit(this)),
+        controlRateValueEdit(new QLineEdit(this)),
         sendRateValueEdit(new QLineEdit(this)),
-        updateRateValuesBtn(new QPushButton("Update Rate Values", this)),
-        updateCalibValuesBtn(new QPushButton("Update Calib Values", this)),
+        updateRateValuesBtn(new QPushButton("Get Rate Values", this)),
+        updateCalibValuesBtn(new QPushButton("Get Calib Values", this)),
         setRateValuesBtn(new QPushButton("Set Rate Values", this)),
         setCalibValuesBtn(new QPushButton("Set Calib Values", this)),
         offsetValueActual(new QLineEdit(this)),
         multValueActual(new QLineEdit(this)),
         updateRateValueActual(new QLineEdit(this)),
+        controlRateValueActual(new QLineEdit(this)),
         sendRateValueActual(new QLineEdit(this))
 {
     auto* mainLayout = new QHBoxLayout();
     mainLayout->setContentsMargins(10, 10, 10, 10);
     this->setLayout(mainLayout);
-    auto label = new QLabel(QString("Param: %1 Host: %3").arg(param.getParamId(), 0, 16).arg(param.getHostID(), 0, 16));
-    mainLayout->addWidget(label);
+    this->setWindowTitle(QString("Param: %1 Host: %3").arg(param.getParamId(), 0, 16).arg(param.getHostID(), 0, 16));
     mainLayout->addWidget(makeCalibBox());
     mainLayout->addWidget(makeRatesBox());
     show();
@@ -89,34 +90,49 @@ QGroupBox* ConfigParamDlg::makeRatesBox(){
     ratesGroupBox->setLayout(ratesGroupBoxLayout);
 
     updateRateValueActual->setAlignment(Qt::AlignCenter);
+    controlRateValueActual->setAlignment(Qt::AlignCenter);
     updateRateValueEdit->setAlignment(Qt::AlignCenter);
     updateRateValueEdit->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed, QSizePolicy::LineEdit));
+    controlRateValueEdit->setAlignment(Qt::AlignCenter);
+    controlRateValueEdit->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed, QSizePolicy::LineEdit));
     sendRateValueActual->setAlignment(Qt::AlignCenter);
     sendRateValueEdit->setAlignment(Qt::AlignCenter);
     sendRateValueEdit->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed, QSizePolicy::LineEdit));
     updateRateValueActual->setEnabled(false);
+    controlRateValueActual->setEnabled(false);
     sendRateValueActual->setEnabled(false);
 
     connect(updateRateValuesBtn, &QPushButton::clicked, [this]()
     {
         updateRateValueActual->clear();
         sendRateValueActual->clear();
+        controlRateValueActual->clear();
         updateRateValueActual->setStyleSheet("background-color: bisque;font-weight: normal;");
         sendRateValueActual->setStyleSheet("background-color: bisque;font-weight: normal;");
-        param.getParamType() == UPDATE ? makeMsg(ProtosMessage::UPDATE_RATE) : makeMsg(ProtosMessage::CTRL_RATE);
+        controlRateValueActual->setStyleSheet("background-color: bisque;font-weight: normal;");
+//        param.getParamType() == UPDATE ? makeMsg(ProtosMessage::UPDATE_RATE) : makeMsg(ProtosMessage::CTRL_RATE);
+        makeMsg(ProtosMessage::UPDATE_RATE);
+        makeMsg(ProtosMessage::CTRL_RATE);
         makeMsg(ProtosMessage::SEND_RATE);
     });
     connect(setRateValuesBtn, &QPushButton::clicked, [this]()
     {
         auto updateRateText = updateRateValueEdit->text();
+        auto controlRateText = controlRateValueEdit->text();
         auto sendRateText = sendRateValueEdit->text();
         bool ok;
         if(updateRateText.length()){
             short updateRateValue = updateRateText.toShort(&ok);
-            if(ok) param.getParamType() == UPDATE ?
-                makeMsg(ProtosMessage::UPDATE_RATE, updateRateValue, true)
-                    : makeMsg(ProtosMessage::CTRL_RATE, updateRateValue, true);
+//            if(ok) param.getParamType() == UPDATE ?
+//                makeMsg(ProtosMessage::UPDATE_RATE, updateRateValue, true)
+//                    : makeMsg(ProtosMessage::CTRL_RATE, updateRateValue, true);
+            if(ok) makeMsg(ProtosMessage::UPDATE_RATE, updateRateValue, true);
             else QMessageBox::information(this, "Wrong Update Rate Value", "Should be short");
+        }
+        if(controlRateText.length()){
+            short controlRateValue = controlRateText.toShort(&ok);
+            if(ok) makeMsg(ProtosMessage::CTRL_RATE, controlRateValue, true);
+            else QMessageBox::information(this, "Wrong Control Rate value", "Should be short");
         }
         if(sendRateText.length()){
             short sendRateValue = sendRateText.toShort(&ok);
@@ -125,18 +141,19 @@ QGroupBox* ConfigParamDlg::makeRatesBox(){
         }
     });
 
-    ratesGroupBoxLayout->addRow("Actual Update/Control value", updateRateValueActual);
+    ratesGroupBoxLayout->addRow("Actual UpdateRate value", updateRateValueActual);
+    ratesGroupBoxLayout->addRow("Actual ControlRate value", controlRateValueActual);
     ratesGroupBoxLayout->addRow("Actual SendRate value", sendRateValueActual);
 
-    if(param.getParamType() == UPDATE)
-        ratesGroupBoxLayout->addRow("Update Rate value", updateRateValueEdit);
-    else if(param.getParamType() == SET)
-        ratesGroupBoxLayout->addRow("Control Rate value", updateRateValueEdit);
-
+//    if(param.getParamType() == UPDATE)
+//        ratesGroupBoxLayout->addRow("Update Rate value", updateRateValueEdit);
+//    else if(param.getParamType() == CONTROL)
+//        ratesGroupBoxLayout->addRow("Control Rate value", updateRateValueEdit);
+    ratesGroupBoxLayout->addRow("Update Rate value", updateRateValueEdit);
+    ratesGroupBoxLayout->addRow("Control Rate value", controlRateValueEdit);
     ratesGroupBoxLayout->addRow("SendRate value", sendRateValueEdit);
     ratesGroupBoxLayout->addWidget(updateRateValuesBtn);
     ratesGroupBoxLayout->addWidget(setRateValuesBtn);
-
     return ratesGroupBox;
 }
 
@@ -158,6 +175,8 @@ void ConfigParamDlg::processAns(const ProtosMessage& message) {
     auto value = QString("%1").arg(message.GetParamFieldValue().toFloat());
     switch (message.ParamField) {
         case ProtosMessage::CTRL_RATE:
+            controlRateValueActual->setText(value);
+            controlRateValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
         case ProtosMessage::UPDATE_RATE:
             updateRateValueActual->setText(value);
             updateRateValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
@@ -178,4 +197,9 @@ void ConfigParamDlg::processAns(const ProtosMessage& message) {
         default:
             break;
     }
+}
+
+void ConfigParamDlg::raiseWindow() {
+    show();
+    raise();
 }
