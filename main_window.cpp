@@ -327,6 +327,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
         saveAll();
     paramService->closeAll();
     configFile->close();
+    for(auto it=setParamValueDlgMap.begin(); it!=setParamValueDlgMap.end(); it++){
+        it.value()->setAttribute(Qt::WA_DeleteOnClose);
+        it.value()->close();
+    }
     close();
 }
 

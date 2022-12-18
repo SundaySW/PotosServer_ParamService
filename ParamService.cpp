@@ -302,6 +302,7 @@ void ParamService::setPtrListFromMap(ParamItemType type){
 }
 
 void ParamService::setParamValueChanged(int listPosition, const QVariant& value){
+    if(listPosition < 0 || listPosition >= ptrListUpdate.size()) return;
     auto* param = ptrListUpdate[listPosition];
     param->setExpectedValue(value);
     param->setSenderId(selfAddr);
@@ -419,6 +420,10 @@ bool ParamService::isWriteToFile() const {
 void ParamService::closeAll() {
     dbDriver.closeConnection();
     logFile->close();
+    for(auto it=configParamDlgMap.begin(); it!=configParamDlgMap.end(); it++){
+        it.value()->setAttribute(Qt::WA_DeleteOnClose);
+        it.value()->close();
+    }
 }
 
 void ParamService::logEventToDB(const QString &eventStr) {

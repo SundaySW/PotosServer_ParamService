@@ -36,7 +36,7 @@ ServerConnectWidget::ServerConnectWidget(SocketAdapter& socket, QJsonObject& Jso
     updateView();
     connect(connectBtn, &QPushButton::clicked, [this, confObject]() {
         if(Socket.IsConnected()) {
-            Socket.Disconnect(1000);
+            Socket.Disconnect(30);
             checkConnectTimer->stop();
             emit eventInServerConnection("Disconnected from server by user", false);
         }else{
@@ -68,7 +68,7 @@ bool ServerConnectWidget::connectToSocket(bool fromEnter) {
         ip = confObject["ServerIP"].toString();
         port = confObject["ServerPort"].toString();
     }
-    bool isConnected = Socket.Connect(ip, port.toInt(), 10);
+    bool isConnected = Socket.Connect(ip, port.toInt(), 30);
     QString eventStr;
     bool isError = false;
     if(isConnected){
@@ -76,7 +76,7 @@ bool ServerConnectWidget::connectToSocket(bool fromEnter) {
         countOfReconnect = 0;
     }else
     {
-        if(countOfReconnect == 1)
+        if(countOfReconnect == 1 || fromEnter)
             eventStr = QString("Event is server connection: cant connect to sever ip:%1 pot:%2").arg(ip).arg(port);
         isError = true;
     }
