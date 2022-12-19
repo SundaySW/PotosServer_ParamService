@@ -256,6 +256,7 @@ void MainWindow::timerEvent(QTimerEvent *event){
 void MainWindow::OnClickedTableCell(const QModelIndex &index) {
     auto* model = (IParamService_model*)index.model();
     auto* param = model->getParam(index.row());
+    if(param == nullptr) return;
     auto mapKey = ParamService::makeMapKey(*param);
     if(model->isSetCellClicked(index.column())){
         if(setParamValueDlgMap.contains(mapKey)) {
@@ -368,6 +369,7 @@ void MainWindow::sortColumns(ParamItemType type, IParamModel::Headers header){
 void MainWindow::OnParamContextMenuReq(const QModelIndex &index, IParamModel::ContextMenuReq req) {
     auto* model = (IParamService_model*)index.model();
     auto* param = model->getParam(index.row());
+    if(param == nullptr) return;
     auto mapKey = ParamService::makeMapKey(*param);
     switch (req){
         case IParamModel::Config:

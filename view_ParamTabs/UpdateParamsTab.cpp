@@ -88,6 +88,7 @@ void UpdateParamsTab::TCClicked(const QModelIndex& arg){
 
 void UpdateParamsTab::UpdtData(const QModelIndex &index, const QModelIndex &arg1) {
     auto* param = updateParamModel->getParam(index.row());
+    if(param == nullptr) return;
     auto tableName = param->getTableName();
     if(index.column() == IParamModel::PARAM_ID || index.column() == IParamModel::PARAM_ID){
         paramService->logViewChangesToDB(QString("%1 : new alt_name : %2").arg(tableName).arg(param->getAltName()));

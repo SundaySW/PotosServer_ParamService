@@ -28,7 +28,8 @@ ParamItem::ParamItem(const ProtosMessage &message, ParamItemType type){
     Value = message.GetParamFieldValue();
     expectedValue = message.GetParamFieldValue();
     Note = "";
-    writeToDB = (type == CONTROL);
+//    writeToDB = (type == CONTROL);
+    writeToDB = false;
     paramType = UPDATE; //todo check about it
     state = ONLINE;
     lastValueTime = QDateTime::currentDateTime();

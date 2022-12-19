@@ -349,11 +349,11 @@ void ParamService::sendProtosMsgSetParam(const QString &mapKey) {
 void ParamService::sortUpdateParamListAboutDB(bool arg){
     QList<ParamItem*> TMPptrListUpdate;
     for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
-        if(it.value().getParamType() == UPDATE){
+//        if(it.value().getParamType() == UPDATE){
             if(!arg) TMPptrListUpdate.append(&it.value());
             else if(it.value().isWriteToDb())
                 TMPptrListUpdate.append(&it.value());
-        }
+//        }
     }
     TMPptrListUpdate.swap(ptrListUpdate);
 }
