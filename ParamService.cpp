@@ -275,8 +275,10 @@ void ParamService::processPANSMsg(const ProtosMessage& message){
 
 void ParamService::updateParamUpdateRate(const QString& mapKey, const QVariant& value){
     bool ok;
-    short newUpdateRateValue = value.toInt(&ok)*1.1;
+    short newUpdateRateValue = value.toInt(&ok);
     if(ok){
+        if(newUpdateRateValue > 2900) newUpdateRateValue *= 1.2;
+        else newUpdateRateValue *= 1.5;
         if(dataMap.contains(mapKey))
             dataMap[mapKey].setUpdateRate(newUpdateRateValue);
         if(timerMap.contains(mapKey))

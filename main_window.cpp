@@ -137,7 +137,7 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
         paramService->setWriteToFile(checked);
     });
 
-    auto sortByHostLabel = new QLabel("Sort all tabs by host 0x", this);
+    auto sortByHostLabel = new QLabel("Sort all params by host 0x", this);
     sortByHostLabel->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed,QSizePolicy::Label));
     hostSortCombBox = new QComboBox(this);
     hostSortCombBox->setEditable(false);

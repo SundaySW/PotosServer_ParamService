@@ -45,8 +45,10 @@ bool IParamService_model::isSetCellClicked(int col) {
 }
 
 const ParamItem* IParamService_model::getParam(int index){
-    if(index >= 0 and index < paramPtrList.size()) return paramPtrList[index];
-    else return nullptr;
+//    if(index >= 0 and index < paramPtrList.size()) return paramPtrList[index];
+//    if(index >= 0 and index < paramPtrList.size()) return paramPtrList.at(index);
+    return paramPtrList.at(index);
+//    else return nullptr;
 }
 
 bool IParamService_model::checkType(ParamItemType checkType) {
