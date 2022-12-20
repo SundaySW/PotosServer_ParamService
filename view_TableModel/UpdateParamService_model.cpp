@@ -91,7 +91,7 @@ QVariant UpdateParamService_model::GetDisplayRoleData(const QModelIndex& index, 
         case IParamModel::PARAM_HOST:
             return (QString("0x%1").arg(data->getHostID(),0, 16));
         case IParamModel::VALUE:
-            return data->getValue().toString();
+            return data->getValue().toFloat();
         case IParamModel::NOTES:
             return data->getNote();
         case IParamModel::DELETE:

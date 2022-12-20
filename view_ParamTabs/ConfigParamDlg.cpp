@@ -186,13 +186,12 @@ void ConfigParamDlg::processAns(const ProtosMessage& message) {
             sendRateValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
             break;
         case ProtosMessage::MULT:
-            offsetValueActual->setText(value);
-            offsetValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
-            break;
-        case ProtosMessage::OFFSET:
-            multValueEdit->setText(value);
             multValueActual->setText(value);
             multValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
+            break;
+        case ProtosMessage::OFFSET:
+            offsetValueActual->setText(value);
+            offsetValueActual->setStyleSheet("color: white; background-color: mediumaquamarine; font-weight: bold;");
             break;
         default:
             break;

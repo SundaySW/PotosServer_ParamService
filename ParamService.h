@@ -96,5 +96,7 @@ private:
     void processPANSMsg(const ProtosMessage &message);
     void removeFromAllMaps(const QString &mapKey);
     void updateParamUpdateRate(const QString &mapKey, const QVariant &value);
+
+    void processPSETMsg(const ProtosMessage &message);
 };
 #endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H

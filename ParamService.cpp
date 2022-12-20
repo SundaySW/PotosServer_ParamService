@@ -240,9 +240,7 @@ void ParamService::rxMsgHandler(const ProtosMessage &message){
             processPANSMsg(message);
             break;
         case ProtosMessage::MsgTypes::PSET:
-            mapKey = makeMapKey(message.GetDestAddr(), message.GetParamId());
-            if(!updateParam(message, mapKey))
-                addParam(std::move(ParamItem(message, CONTROL)));
+            processPSETMsg(message);
             break;
         default:
             break;
@@ -273,12 +271,36 @@ void ParamService::processPANSMsg(const ProtosMessage& message){
     }
 }
 
+void ParamService::processPSETMsg(const ProtosMessage& message){
+    QString mapKey = makeMapKey(message.GetDestAddr(), message.GetParamId());
+    switch (message.ParamField) {
+        case ProtosMessage::VALUE:
+            if(!updateParam(message, mapKey))
+                addParam(std::move(ParamItem(message, CONTROL)));
+            break;
+        case ProtosMessage::UPDATE_RATE:
+        case ProtosMessage::CTRL_RATE:
+        case ProtosMessage::SEND_TIME:
+        case ProtosMessage::UPDATE_TIME:
+        case ProtosMessage::SEND_RATE:
+        case ProtosMessage::CTRL_TIME:
+        case ProtosMessage::MULT:
+        case ProtosMessage::OFFSET:
+            if(configParamDlgMap.contains(mapKey) && message.GetSenderAddr() != selfAddr)
+                configParamDlgMap[mapKey]->processAns(message);
+            break;
+        default:
+            break;
+    }
+}
+
 void ParamService::updateParamUpdateRate(const QString& mapKey, const QVariant& value){
     bool ok;
     short newUpdateRateValue = value.toInt(&ok);
     if(ok){
-        if(newUpdateRateValue > 2900) newUpdateRateValue *= 1.2;
-        else newUpdateRateValue *= 1.5;
+        if(newUpdateRateValue > 2900) newUpdateRateValue *= 1.5;
+        else if(newUpdateRateValue <= 2900 and newUpdateRateValue >= 1200) newUpdateRateValue *= 2.5;
+        else newUpdateRateValue *= 4;
         if(dataMap.contains(mapKey))
             dataMap[mapKey].setUpdateRate(newUpdateRateValue);
         if(timerMap.contains(mapKey))
@@ -319,7 +341,7 @@ void ParamService::setParamValueChanged(int listPosition, const QVariant& value)
     sendProtosMsgSetParam(mapKey);
     processSetParamReq(mapKey);
 
-    //    auto* param = ptrListSet[listPosition];
+//    auto* param = ptrListSet[listPosition];
 //    param->setExpectedValue(value);
 //    param->setSenderId(selfAddr);
 //    param->setState(PENDING);
@@ -363,11 +385,11 @@ void ParamService::sortUpdateParamListAboutDB(bool arg){
 void ParamService::sortUpdateListAboutOnline(bool arg) {
     QList<ParamItem*> TMPptrListUpdate;
     for(auto it=dataMap.begin(); it!=dataMap.end(); it++){
-        if(it.value().getParamType() == UPDATE){
+//        if(it.value().getParamType() == UPDATE){
             if(!arg) TMPptrListUpdate.append(&it.value());
             else if(it.value().getState() == ONLINE)
                 TMPptrListUpdate.append(&it.value());
-        }
+//        }
     }
     TMPptrListUpdate.swap(ptrListUpdate);
 }
