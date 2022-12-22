@@ -78,6 +78,7 @@ void ParamItem::update(const ProtosMessage &message){
     setDestId(message.GetDestAddr());
     setLastValueTime(QDateTime::currentDateTime());
     auto receivedValue = message.GetParamFieldValue();
+    auto msgType = message.MsgType;
     if(lastValueType == ProtosMessage::PSET){
         expectedValue = receivedValue;
         setState(PENDING);
@@ -86,8 +87,10 @@ void ParamItem::update(const ProtosMessage &message){
         if(receivedValue == expectedValue)
             setState(ONLINE);
     }
-    if(paramType == UPDATE)
+    if(msgType == ProtosMessage::PANS)
         setState(ONLINE);
+    else if(msgType == ProtosMessage::PSET)
+        setState(PENDING);
     setValue(message.GetParamFieldValue());
 }
 

@@ -81,7 +81,17 @@ void ParamService::manageTimersWhileUpdate(const QString &mapKey, uchar msgType,
                 }
                 break;
             case UPDATE:
-                timerMap[mapKey]->start(updateRate);
+                switch(msgType){
+                    case ProtosMessage::PSET:
+                        timerMap[mapKey]->start(updateRate);
+                        processSetParamReq(mapKey);
+                        break;
+                    case ProtosMessage::PANS:
+                        timerMap[mapKey]->start(updateRate);
+                        break;
+                    default:
+                        break;
+                }
                 break;
             default:
                 break;
@@ -334,8 +344,6 @@ void ParamService::setParamValueChanged(int listPosition, const QVariant& value)
     param->setLastValueType(ProtosMessage::MsgTypes::PSET);
     emit changedParamState(UPDATE);
     auto mapKey = makeMapKey(*param);
-    if(timerMap.contains(mapKey))
-        timerMap[mapKey]->start(param->getUpdateRate());
     param->setValue(value);
     writeParamToDB(mapKey);
     sendProtosMsgSetParam(mapKey);
