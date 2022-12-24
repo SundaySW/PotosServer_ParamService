@@ -268,8 +268,8 @@ void MainWindow::OnClickedTableCell(const QModelIndex &index) {
         dlg->show();
         dlg->raise();
         dlg->activateWindow();
-        connect(dlg, &SetParamValueDlg::paramValueSet, [this, index](uchar paramID, uchar hostID, const QVariant& value) {
-            paramService->setParamValueChanged(index.row(), value);
+        connect(dlg, &SetParamValueDlg::paramValueSet, [this, mapKey](uchar paramID, uchar hostID, const QVariant& value) {
+            paramService->setParamValueChanged(mapKey, value);
         });
         setParamValueDlgMap.insert(mapKey, dlg);
     }
@@ -355,15 +355,6 @@ void MainWindow::AddToLog(const QString& string, bool isError)
     logWidget->addItem(QTime::currentTime().toString("HH:mm:ss:zzz").append(" : ").append(string));
     logWidget->item(logWidget->count() - 1)->
             setForeground(isError ? QBrush(QColor("red")) : QBrush(QColor("green")));
-}
-
-void MainWindow::sortColumns(ParamItemType type, IParamModel::Headers header){
-    if(header == IParamModel::PARAM_ID) paramService->sortByParamID(type);
-    else if(header == IParamModel::PARAM_HOST) paramService->sortByHostID(type);
-    if(type == UPDATE)
-        updateParamsTab->getModel()->update(IParamModel::RESET_TASK);
-    else if(type == CONTROL)
-        setParamsTab->getModel()->update(IParamModel::RESET_TASK);
 }
 
 void MainWindow::OnParamContextMenuReq(const QModelIndex &index, IParamModel::ContextMenuReq req) {

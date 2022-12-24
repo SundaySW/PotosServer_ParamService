@@ -34,7 +34,7 @@ public:
     QList<ParamItem *>& getPtrList(ParamItemType type);
     SocketAdapter& getSocketAdapter();
     void logEventToDB(const QString &eventStr);
-    void setParamValueChanged(int, const QVariant& value);
+    void setParamValueChanged(const QString&, const QVariant& value);
     void logViewChangesToDB(const QString &);
     static QString makeMapKey(uchar host, uchar ID);
     static QString makeMapKey(const ParamItem &paramItem);

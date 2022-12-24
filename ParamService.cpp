@@ -335,33 +335,18 @@ void ParamService::setPtrListFromMap(ParamItemType type){
     else if(type == ParamItemType::CONTROL) tmpList.swap(ptrListSet);
 }
 
-void ParamService::setParamValueChanged(int listPosition, const QVariant& value){
-    if(listPosition < 0 || listPosition >= ptrListUpdate.size()) return;
-    auto* param = ptrListUpdate[listPosition];
-    param->setExpectedValue(value);
-    param->setSenderId(selfAddr);
-    param->setState(PENDING);
-    param->setLastValueType(ProtosMessage::MsgTypes::PSET);
+void ParamService::setParamValueChanged(const QString& mapKey, const QVariant& value){
+    if(!dataMap.contains(mapKey)) return;
+    auto param = dataMap[mapKey];
+    param.setExpectedValue(value);
+    param.setSenderId(selfAddr);
+    param.setState(PENDING);
+    param.setLastValueType(ProtosMessage::MsgTypes::PSET);
     emit changedParamState(UPDATE);
-    auto mapKey = makeMapKey(*param);
-    param->setValue(value);
+    param.setValue(value);
     writeParamToDB(mapKey);
     sendProtosMsgSetParam(mapKey);
     processSetParamReq(mapKey);
-
-//    auto* param = ptrListSet[listPosition];
-//    param->setExpectedValue(value);
-//    param->setSenderId(selfAddr);
-//    param->setState(PENDING);
-//    param->setLastValueType(ProtosMessage::MsgTypes::PSET);
-//    emit changedParamState(CONTROL);
-//    auto mapKey = makeMapKey(*param);
-//    if(timerMap.contains(mapKey))
-//        timerMap[mapKey]->start(param->getUpdateRate());
-//    param->setValue(value);
-//    writeParamToDB(mapKey);
-//    sendProtosMsgSetParam(mapKey);
-//    processSetParamReq(mapKey);
 }
 
 void ParamService::processSetParamReq(const QString& mapKey){

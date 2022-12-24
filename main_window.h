@@ -28,7 +28,6 @@ public:
 private slots:
     void OnClickedTableCell(const QModelIndex &index);
     void OnParamContextMenuReq(const QModelIndex&, IParamModel::ContextMenuReq);
-    void sortColumns(ParamItemType, IParamModel::Headers);
 protected:
     void timerEvent(QTimerEvent *event) override;
 private:
