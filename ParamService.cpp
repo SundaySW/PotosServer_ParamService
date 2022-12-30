@@ -337,7 +337,7 @@ void ParamService::setPtrListFromMap(ParamItemType type){
 
 void ParamService::setParamValueChanged(const QString& mapKey, const QVariant& value){
     if(!dataMap.contains(mapKey)) return;
-    auto param = dataMap[mapKey];
+    auto& param = dataMap[mapKey];
     param.setExpectedValue(value);
     param.setSenderId(selfAddr);
     param.setState(PENDING);

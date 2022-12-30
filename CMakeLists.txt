@@ -47,8 +47,14 @@ set(SOURCE_FILES
         ${SOURCES}
         )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    enable_language("RC")
+    set (WIN32_RESOURCES Resource/resource.rc)
+endif()
+
 add_executable(${PROJECT_NAME}
         ${SOURCE_FILES}
+        ${WIN32_RESOURCES}
         )
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
@@ -61,6 +67,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/logs/ ${CMAKE_CURRENT_BINARY_DIR}/logs/
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/appLogs/ ${CMAKE_CURRENT_BINARY_DIR}/appLogs/
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/psql_libs/lib ${CMAKE_CURRENT_BINARY_DIR}/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Resource/ ${CMAKE_CURRENT_BINARY_DIR}/Resource/
     )
     add_custom_command(
             TARGET ${PROJECT_NAME} POST_BUILD
