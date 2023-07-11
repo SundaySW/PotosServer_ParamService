@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
+#set(CMAKE_TOOLCHAIN_FILE cmake/toolchain.cmake)
+
 project(ProtosServer_ParamService C CXX ASM)
-add_definitions(-D_VER="V1.3")
+add_definitions(-D_VER="V1.4")
 add_definitions(-D_BUILD_TYPE_="${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_CXX_STANDARD 20)
+message("SysName: ${CMAKE_SYSTEM_NAME}")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(CMAKE_PREFIX_PATH $ENV{HOME}/rpi/qt5.15)
+    #    set(TARGET_USER sa)
+    #    set(CMAKE_INSTALL_RPATH "/home/${TARGET_USER}/${PROJECT_NAME}")
+endif()
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -59,21 +68,32 @@ add_executable(${PROJECT_NAME}
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
     message("Release build!")
-    set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE true)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/saved_params.json ${CMAKE_CURRENT_BINARY_DIR}/saved_params.json COPYONLY)
     add_custom_command(
             TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/qss/ ${CMAKE_CURRENT_BINARY_DIR}/qss/
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/logs/ ${CMAKE_CURRENT_BINARY_DIR}/logs/
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/appLogs/ ${CMAKE_CURRENT_BINARY_DIR}/appLogs/
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/psql_libs/lib ${CMAKE_CURRENT_BINARY_DIR}/
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Resource/ ${CMAKE_CURRENT_BINARY_DIR}/Resource/
     )
     add_custom_command(
             TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND windeployqt "$<TARGET_FILE:${PROJECT_NAME}>"
-            VERBATIM
+            COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/CMakeCache.txt
+            COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
+            COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/Makefile
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/.cmake
     )
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE true)
+        add_custom_command(
+                COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/logs/ ${CMAKE_CURRENT_BINARY_DIR}/logs/
+                COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/appLogs/ ${CMAKE_CURRENT_BINARY_DIR}/appLogs/
+                COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/psql_libs/lib ${CMAKE_CURRENT_BINARY_DIR}/
+                TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND windeployqt "$<TARGET_FILE:${PROJECT_NAME}>"
+                VERBATIM
+        )
+    endif()
 ENDIF()
 
 #target_compile_definitions(${PROJECT_NAME}

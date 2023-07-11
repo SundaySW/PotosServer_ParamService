@@ -47,5 +47,6 @@ void ParamServiceSettingsWidget::Save() {
     QJsonObject confObj;
     confObj["SelfAddr"] = selfAddr->text();
     confObj["RequestOnSet"] = requestOnSet->isChecked();
+
     savedConf["ParamServiceConf"] = confObj;
 }

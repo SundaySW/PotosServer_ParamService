@@ -54,6 +54,8 @@ public:
     bool isReqOnSet() const;
     QSet<uchar> getAllHostsInSet();
     void removeAllParams();
+    void SaveLogFilePath(QString &&eventStr);
+    QString &getLogFilePath();
 signals:
     void changedParamState(ParamItemType);
     void addedParamFromLine(ParamItemType);
@@ -79,6 +81,7 @@ private:
     bool writeToFile;
     bool reqOnSet;
     QFile* logFile;
+    QString log_file_path{};
     QTextStream textStream;
     QJsonObject& qJsonObject;
     SocketAdapter socketAdapter;
@@ -96,7 +99,6 @@ private:
     void processPANSMsg(const ProtosMessage &message);
     void removeFromAllMaps(const QString &mapKey);
     void updateParamUpdateRate(const QString &mapKey, const QVariant &value);
-
     void processPSETMsg(const ProtosMessage &message);
 };
 #endif //POTOSSERVER_PARAMSERVICE_PARAMSERVICE_H

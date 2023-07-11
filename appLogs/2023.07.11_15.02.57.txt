@@ -1,0 +1,1 @@
+15:02:16:043 : Event is server connection: connected to sever ip:192.168.1.99 pot:3699

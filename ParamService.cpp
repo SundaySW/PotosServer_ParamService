@@ -172,8 +172,9 @@ void ParamService::writeParamToDB(const QString &mapKey, const QString &event){
 void ParamService::writeParamToFile(ParamItem &param, const QString &event) {
     if(!logFile->isOpen()){
         auto fileName = QDateTime::currentDateTime().toString(QString("yyyy.MM.dd_hh.mm.ss")).append(".csv");
-        auto pathToLogs = QString(CURRENT_BUILD_TYPE_) == "Debug" ? "/../logs" : "/logs";
-        logFile = new QFile(QCoreApplication::applicationDirPath() + QString("%1/%2").arg(pathToLogs).arg(fileName));
+        if(log_file_path.isEmpty())
+            log_file_path = QCoreApplication::applicationDirPath() + QString(CURRENT_BUILD_TYPE_) == "Debug" ? "/../logs/" : "/logs/";
+        logFile = new QFile(QString("%1%2").arg(log_file_path, fileName));
         logFile->open(QIODevice::ReadWrite);
         textStream.setDevice(logFile);
         textStream << param.getLogToFileHead();
@@ -196,11 +197,13 @@ void ParamService::saveParams() {
     for(auto& p: dataMap)
         paramArr.append(p.getJsonObject());
     qJsonObject["Params"] = paramArr;
+    qJsonObject["LogFilePath"] = log_file_path;
     logFile->close();
 }
 
 void ParamService::loadParams() {
     QJsonArray paramArr = qJsonObject["Params"].toArray();
+    log_file_path = qJsonObject["LogFilePath"].toString();
     dataMap.clear();
     timerMap.clear();
     for (const auto& param : paramArr)
@@ -447,6 +450,14 @@ void ParamService::logEventToDB(const QString &eventStr) {
 //    for(auto& param: dataMap.values())
 //        if(makeMapKey(param) != mapKeySkip && param.getParamType() != CONTROL) writeParamToDB(makeMapKey(param), eventStr);
     dbDriver.writeEvent(eventStr);
+}
+
+void ParamService::SaveLogFilePath(QString&& eventStr){
+    log_file_path = std::move(eventStr);
+}
+
+QString& ParamService::getLogFilePath(){
+    return log_file_path;
 }
 
 void ParamService::logViewChangesToDB(const QString& eventStr) {

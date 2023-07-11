@@ -114,6 +114,23 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
     searchGroupBoxLayout->setSpacing(10);
     addParamGroupBox->setLayout(searchGroupBoxLayout);
 
+    auto* log_file_path = new QPushButton("Log Files Path");
+    connect(log_file_path, &QPushButton::clicked, [this]()
+    {
+        QDialog dlg(this);
+        dlg.setWindowTitle("Enter path for log files");
+        auto filePath = new QLineEdit(paramService->getLogFilePath());
+        auto *btn_box = new QDialogButtonBox(&dlg);
+        btn_box->setStandardButtons(QDialogButtonBox::Save);
+        connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+        auto *layout = new QFormLayout();
+        layout->addRow(tr("File path: "), filePath);
+        layout->addWidget(btn_box);
+        dlg.setLayout(layout);
+        if(dlg.exec() == QDialog::Accepted)
+            paramService->SaveLogFilePath(filePath->text());
+    });
+
     auto* makeEvent = new QPushButton("Make Event");
     connect(makeEvent, &QPushButton::clicked, [this]()
     {
@@ -153,6 +170,7 @@ QGroupBox* MainWindow::makeParamSetGroupBox(){
 
     makeEvent->setEnabled(true);
     searchGroupBoxLayout->addWidget(makeEvent);
+    searchGroupBoxLayout->addWidget(log_file_path);
     searchGroupBoxLayout->addWidget(logToFile);
     searchGroupBoxLayout->addWidget(sortByHostLabel);
     searchGroupBoxLayout->addWidget(hostSortCombBox);

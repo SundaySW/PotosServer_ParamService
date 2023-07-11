@@ -60,6 +60,8 @@ QVariant UpdateParamService_model::data(const QModelIndex &index, int role) cons
         return QVariant();
     switch (role)
     {
+        case Qt::ForegroundRole:
+            return {QBrush(QRgb(0x4D4D4D))};
         case Qt::BackgroundRole:
             return GetDisplayBackgroundRole(index, data);
         case Qt::DisplayRole:
@@ -73,6 +75,11 @@ QVariant UpdateParamService_model::data(const QModelIndex &index, int role) cons
         default:
             return QVariant();
     }
+}
+
+QBrush UpdateParamService_model::GetDisplayForegroundRole(const QModelIndex& index, ParamItem *data) const
+{
+    return {QBrush(QRgb(0x4D4D4D))};
 }
 
 QVariant UpdateParamService_model::GetDisplayRoleData(const QModelIndex& index, ParamItem *data) const

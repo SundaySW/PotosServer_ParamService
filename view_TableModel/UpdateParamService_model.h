@@ -25,6 +25,7 @@ public:
 
 private:
     QVariant GetDisplayRoleData(const QModelIndex&, ParamItem*) const;
+    QBrush GetDisplayForegroundRole(const QModelIndex &index, ParamItem *data) const;
     QBrush GetDisplayBackgroundRole(const QModelIndex&, ParamItem*) const;
     static const int nOfColumns = 6;
     static const QString ColumnHeaders[nOfColumns];
